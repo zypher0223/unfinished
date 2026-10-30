@@ -43,7 +43,8 @@ export function caseBars(c,revealed){
 /** Additional chart topics (2026-10-30): same synthetic bars; common built-in definitions, parameters match each lesson's practice setup. */
 const smaN=(a,n)=>a.map((_,i)=>{if(i<n-1)return null;const w=a.slice(i-n+1,i+1);return w.some(x=>x==null)?null:w.reduce((s,x)=>s+x,0)/n;});
 export function wilder(vals,n){let v=null;const seed=[];return vals.map(x=>{if(x==null)return null;if(v===null){seed.push(x);if(seed.length<n)return null;v=seed.reduce((a,b)=>a+b,0)/n;}else v=(v*(n-1)+x)/n;return v;});}
-export function extended(bars){
+export function extended(bars){return {...extendedBase(bars),...more(bars)};}
+function extendedBase(bars){
  const c=bars.map(b=>b.close),h=bars.map(b=>b.high),l=bars.map(b=>b.low),v=bars.map(b=>b.volume),tp=bars.map(b=>(b.high+b.low+b.close)/3),N=bars.length;
  const hh=n=>h.map((_,i)=>i<n-1?null:Math.max(...h.slice(i-n+1,i+1))),ll=n=>l.map((_,i)=>i<n-1?null:Math.min(...l.slice(i-n+1,i+1)));
  const s20=smaN(c,20),sd20=c.map((_,i)=>s20[i]==null?null:Math.sqrt(c.slice(i-19,i+1).reduce((s,x)=>s+(x-s20[i])**2,0)/20));
@@ -77,11 +78,78 @@ export function extended(bars){
  const aroon=(arr,pick)=>arr.map((_,i)=>{if(i<14)return null;const w=arr.slice(i-14,i+1);return 100*w.lastIndexOf(pick(...w))/14;});
  return {wma,vwma,sma20:s20,bbU,bbL,stK,stD,raw,wr,cci,roc,mom,mfi,bbw,pctB,dcU:H20,dcL:L20,dcM,atr10,kcM,kcU,kcL,envU,envL,obv,sar,sarUp,sarFlip,st,stDir,stLo,stHi,pDI,mDI,adx,aroonUp:aroon(h,Math.max),aroonDn:aroon(l,Math.min)};
 }
-const EXTRA_NAMES={3:'WMA 20',5:'VWMA 20',13:'Stochastic 14/3/3',14:'Williams %R 14',15:'CCI 20',16:'ROC 10',17:'Momentum 10',19:'MFI 14',22:'BBW 20/2',23:'%B 20/2',24:'Donchian 20',25:'Keltner 20 · ATR10×2',26:'Envelope SMA20 ±3%',34:'OBV',38:'Parabolic SAR',39:'Supertrend 10/3',41:'ADX 14',42:'DMI 14',43:'Aroon 14'};
+// 2026-10-30 batch 2: more chart topics on the same synthetic bars (common built-in definitions).
+const emaN=(a,n)=>{let v=null;const seed=[];return a.map(x=>{if(x==null)return null;if(v===null){seed.push(x);if(seed.length<n)return null;v=seed.reduce((s,y)=>s+y,0)/n;}else v+=(x-v)*2/(n+1);return v;});};
+const wmaN=(a,n)=>a.map((_,i)=>{if(i<n-1)return null;const w=a.slice(i-n+1,i+1);return w.some(x=>x==null)?null:w.reduce((s,x,k)=>s+x*(k+1),0)/(n*(n+1)/2);});
+const sumN=(a,n)=>a.map((_,i)=>{if(i<n-1)return null;const w=a.slice(i-n+1,i+1);return w.some(x=>x==null)?null:w.reduce((s,x)=>s+x,0);});
+const cum=a=>{let s=0;return a.map(x=>s+=x);};
+const pair=(a,b,f)=>a.map((x,i)=>x==null||b[i]==null?null:f(x,b[i],i));
+function more(bars){
+ const c=bars.map(b=>b.close),o=bars.map(b=>b.open),h=bars.map(b=>b.high),l=bars.map(b=>b.low),v=bars.map(b=>b.volume),hl2=bars.map(b=>(b.high+b.low)/2),N=bars.length;
+ const tr=bars.map((b,i)=>i?Math.max(b.high-b.low,Math.abs(b.high-c[i-1]),Math.abs(b.low-c[i-1])):b.high-b.low);
+ const hh=(a,n)=>a.map((_,i)=>i<n-1?null:Math.max(...a.slice(i-n+1,i+1))),ll=(a,n)=>a.map((_,i)=>i<n-1?null:Math.min(...a.slice(i-n+1,i+1)));
+ const smma=wilder(c,20);
+ const w10=wmaN(c,10),w20=wmaN(c,20),hma=wmaN(pair(w10,w20,(a,b)=>2*a-b),4);
+ const e1=emaN(c,20),e2=emaN(e1,20),e3=emaN(e2,20),dema=pair(e1,e2,(a,b)=>2*a-b),tema=e1.map((x,i)=>x==null||e3[i]==null?null:3*x-3*e2[i]+e3[i]);
+ const ribbon=[10,20,30,40,50].map(n=>emaN(c,n));
+ const lsma=c.map((_,i)=>{const n=25;if(i<n-1)return null;const w=c.slice(i-n+1,i+1),mx=(n-1)/2,my=w.reduce((s,y)=>s+y,0)/n;let sxy=0,sxx=0;w.forEach((y,k)=>{sxy+=(k-mx)*(y-my);sxx+=(k-mx)**2;});return my+sxy/sxx*(n-1-mx);});
+ const atr22=wilder(tr,22),H22=hh(h,22),L22=ll(l,22),ceLong=pair(H22,atr22,(a,b)=>a-3*b),ceShort=pair(L22,atr22,(a,b)=>a+3*b);
+ const f12=emaN(c,12),s26=emaN(c,26),ppo=pair(f12,s26,(a,b)=>100*(a-b)/b),ppoSig=emaN(ppo,9),ppoHist=pair(ppo,ppoSig,(a,b)=>a-b);
+ const atr14=wilder(tr,14),natr=pair(atr14,c,(a,b)=>100*a/b);
+ const sd20=c.map((_,i)=>{if(i<19)return null;const w=c.slice(i-19,i+1),m=w.reduce((s,x)=>s+x,0)/20;return Math.sqrt(w.reduce((s,x)=>s+(x-m)**2,0)/20);});
+ const rvol=v.map((x,i)=>i<20?null:x/(v.slice(i-20,i).reduce((s,y)=>s+y,0)/20));
+ const pvt=cum(c.map((x,i)=>i?(x-c[i-1])/c[i-1]*v[i]:0));
+ const vf=emaN(v,12),vs=emaN(v,26),pvo=pair(vf,vs,(a,b)=>100*(a-b)/b),pvoSig=emaN(pvo,9),pvoHist=pair(pvo,pvoSig,(a,b)=>a-b);
+ const vmP=bars.map((b,i)=>i?Math.abs(b.high-l[i-1]):null),vmM=bars.map((b,i)=>i?Math.abs(b.low-h[i-1]):null),tr1=tr.map((x,i)=>i?x:null),sTR=sumN(tr1,14),viP=pair(sumN(vmP,14),sTR,(a,b)=>a/b),viM=pair(sumN(vmM,14),sTR,(a,b)=>a/b);
+ const H14=hh(h,14),L14=ll(l,14),chop=sTR.map((s,i)=>s==null||H14[i]==null?null:100*Math.log10(s/(H14[i]-L14[i]))/Math.log10(14));
+ const d=c.map((x,i)=>i?x-c[i-1]:null),up=d.map(x=>x==null?null:Math.max(x,0)),dn=d.map(x=>x==null?null:Math.max(-x,0)),su9=sumN(up,9),sd9=sumN(dn,9),cmo=pair(su9,sd9,(a,b)=>a+b===0?0:100*(a-b)/(a+b));
+ const t1=emaN(c,18),t2=emaN(t1,18),t3=emaN(t2,18),trix=t3.map((x,i)=>x==null||t3[i-1]==null?null:100*(x-t3[i-1])/t3[i-1]),trixSig=emaN(trix,9);
+ const s5=smaN(hl2,5),s34=smaN(hl2,34),ao=pair(s5,s34,(a,b)=>a-b);
+ const mfm=bars.map(b=>b.high===b.low?0:((b.close-b.low)-(b.high-b.close))/(b.high-b.low)),mfv=mfm.map((m,i)=>m*v[i]),ad=cum(mfv);
+ const cmf=pair(sumN(mfv,20),sumN(v,20),(a,b)=>a/b),chaikin=pair(emaN(ad,3),emaN(ad,10),(a,b)=>a-b);
+ const efi=emaN(c.map((x,i)=>i?(x-c[i-1])*v[i]:null),13);
+ const bop=bars.map(b=>b.high===b.low?0:(b.close-b.open)/(b.high-b.low)),bopS=smaN(bop,14);
+ const HC14=hh(c,14),dd=c.map((x,i)=>HC14[i]==null?null:100*(x-HC14[i])/HC14[i]),ulcer=dd.map((_,i)=>{if(i<26)return null;const w=dd.slice(i-13,i+1);return Math.sqrt(w.reduce((s,x)=>s+x*x,0)/14);});
+ const rsi=indicators(bars).rsi,rH=hh(rsi.map(x=>x??-Infinity),14).map((x,i)=>i<27?null:x),rL=ll(rsi.map(x=>x??Infinity),14).map((x,i)=>i<27?null:x);
+ const srRaw=rsi.map((x,i)=>rH[i]==null?null:rH[i]===rL[i]?50:100*(x-rL[i])/(rH[i]-rL[i])),srK=smaN(srRaw,3),srD=smaN(srK,3);
+ const ad1=emaN(emaN(d,25),13),ad2=emaN(emaN(d.map(x=>x==null?null:Math.abs(x)),25),13),tsi=pair(ad1,ad2,(a,b)=>b===0?0:100*a/b),tsiSig=emaN(tsi,13);
+ const bbEma=emaN(c,13),bull=pair(h,bbEma,(a,b)=>a-b),bear=pair(l,bbEma,(a,b)=>a-b);
+ const bp=bars.map((b,i)=>i?b.close-Math.min(b.low,c[i-1]):null),ut=bars.map((b,i)=>i?Math.max(b.high,c[i-1])-Math.min(b.low,c[i-1]):null),avg=n=>pair(sumN(bp,n),sumN(ut,n),(a,b)=>a/b),A7=avg(7),A14=avg(14),A28=avg(28),uo=A28.map((x,i)=>x==null?null:100*(4*A7[i]+2*A14[i]+x)/7);
+ const AU=hh(h.map((x,i)=>x),15),aUp=h.map((_,i)=>{if(i<14)return null;const w=h.slice(i-14,i+1);return 100*w.lastIndexOf(Math.max(...w))/14;}),aDn=l.map((_,i)=>{if(i<14)return null;const w=l.slice(i-14,i+1);return 100*w.lastIndexOf(Math.min(...w))/14;}),aroonOsc=pair(aUp,aDn,(a,b)=>a-b);void AU;void N;void o;
+ return {bbEma,bull,bear,smma,hma,dema,tema,ema20:e1,ribbon,lsma,atr22,ceLong,ceShort,ppo,ppoSig,ppoHist,atr14,natr,sd20,rvol,pvt,pvo,pvoSig,pvoHist,viP,viM,chop,cmo,trix,trixSig,ao,ad,mfv,cmf,chaikin,efi,bop,bopS,dd,ulcer,srRaw,srK,srD,tsi,tsiSig,uo,aroonOsc};
+}
+const MORE_NAMES={4:'SMMA/RMA 20',6:'HMA 20',7:'DEMA 20',8:'TEMA 20',10:'EMA Ribbon 10–50',18:'PPO 12/26/9',20:'Bull/Bear Power 13',28:'NATR 14',30:'StdDev 20',33:'RVOL 20',35:'PVT',36:'PVO 12/26/9',44:'Aroon Oscillator 14',45:'Vortex 14',46:'Choppiness 14',52:'LSMA 25',57:'StochRSI 14/14/3/3',59:'CMO 9',60:'TSI 25/13/13',61:'TRIX 18',62:'Ultimate Oscillator 7/14/28',63:'Awesome Oscillator 5/34',77:'Accumulation/Distribution',78:'CMF 20',79:'Chaikin Oscillator 3/10',81:'Elder Force Index 13',85:'Balance of Power',88:'Ulcer Index 14',89:'Chandelier Exit 22/3'};
+const MORE_PANEL=[18,20,28,30,33,35,36,44,45,46,57,59,60,61,62,63,77,78,79,81,85,88];
+function moreOverlays(id,X,t){const ink=palette.ink,ln=palette.line,mu=palette.muted;
+ return id===4?[['SMMA 20',X.smma,'',ink],['SMA 20',X.sma20,'6 4',ln]]:id===6?[['HMA 20',X.hma,'',ink],['SMA 20',X.sma20,'6 4',ln]]:id===7?[['DEMA 20',X.dema,'',ink],['EMA 20',X.ema20,'6 4',ln]]:id===8?[['TEMA 20',X.tema,'',ink],['EMA 20',X.ema20,'6 4',ln]]:id===10?X.ribbon.map((a,k)=>[`EMA ${10*(k+1)}`,a,['','','','5 3','5 3'][k],[ink,ln,mu,ln,mu][k]]):id===52?[['LSMA 25',X.lsma,'',ink],['SMA 20',X.sma20,'6 4',ln]]:id===89?[[t('多头止损线','Long stop'),X.ceLong,'',ink],[t('空头止损线','Short stop'),X.ceShort,'5 3',ln]]:id===20?[['EMA 13',X.bbEma,'',ink]]:[];}
+function morePanels(X,t){const ink=palette.ink,ln=palette.line,mu=palette.muted,fK=v=>`${(v/1000).toFixed(0)}k`,fInt=v=>v==null?'—':Math.round(v).toLocaleString('en-US');
+ return {18:{title:t('PPO 12/26/9 · %','PPO 12/26/9 · %'),series:[[t('柱','Hist'),X.ppoHist,'',ink,'bars'],['PPO',X.ppo,'',ink],['Signal',X.ppoSig,'5 3',ln]],zero:true,dp:2},
+ 20:{title:t('Bull/Bear Power 13 · 美元','Bull/Bear Power 13 · USD'),series:[['Bull',X.bull,'',ink],['Bear',X.bear,'5 3',ln]],zero:true,dp:2},
+ 28:{title:t('NATR 14 · %','NATR 14 · %'),series:[['NATR %',X.natr,'',ink]],floor:0,dp:2},
+ 30:{title:t('标准差 20 · 美元','StdDev 20 · USD'),series:[['StdDev',X.sd20,'',ink]],floor:0,dp:2},
+ 33:{title:t('RVOL 20 · 倍','RVOL 20 · ×'),series:[['RVOL',X.rvol,'',ink,'bars']],min:0,refs:[1],dp:2},
+ 35:{title:t('PVT · 累计（股）','PVT · cumulative shares'),series:[['PVT',X.pvt,'',ink]],dp:0,axis:fK,fmt:fInt},
+ 36:{title:t('PVO 12/26/9 · %','PVO 12/26/9 · %'),series:[[t('柱','Hist'),X.pvoHist,'',ink,'bars'],['PVO',X.pvo,'',ink],['Signal',X.pvoSig,'5 3',ln]],zero:true,dp:1},
+ 44:{title:'Aroon Oscillator 14',series:[['Osc',X.aroonOsc,'',ink]],min:-100,max:100,refs:[0],dp:0},
+ 45:{title:'Vortex 14',series:[['VI+',X.viP,'',ink],['VI−',X.viM,'5 3',ln]],refs:[1],dp:2},
+ 46:{title:'Choppiness Index 14',series:[['CHOP',X.chop,'',ink]],min:0,max:100,refs:[38.2,61.8],dp:1},
+ 57:{title:'StochRSI 14/14/3/3',series:[['%K',X.srK,'',ink],['%D',X.srD,'5 3',ln]],min:0,max:100,refs:[20,80],dp:0},
+ 59:{title:'CMO 9',series:[['CMO',X.cmo,'',ink]],min:-100,max:100,refs:[-50,50],zero:true,dp:0},
+ 60:{title:'TSI 25/13/13',series:[['TSI',X.tsi,'',ink],['Signal',X.tsiSig,'5 3',ln]],zero:true,dp:1},
+ 61:{title:t('TRIX 18 · %','TRIX 18 · %'),series:[['TRIX',X.trix,'',ink],['Signal 9',X.trixSig,'5 3',ln]],zero:true,dp:3},
+ 62:{title:'Ultimate Oscillator 7/14/28',series:[['UO',X.uo,'',ink]],min:0,max:100,refs:[30,70],dp:0},
+ 63:{title:t('Awesome Oscillator · 美元','Awesome Oscillator · USD'),series:[['AO',X.ao,'',ink,'bars']],zero:true,dp:2},
+ 77:{title:t('A/D 线 · 累计（股）','A/D line · cumulative shares'),series:[['A/D',X.ad,'',ink]],dp:0,axis:fK,fmt:fInt},
+ 78:{title:'CMF 20',series:[['CMF',X.cmf,'',ink]],zero:true,dp:3},
+ 79:{title:t('Chaikin Oscillator 3/10 · 股','Chaikin Oscillator 3/10 · shares'),series:[['CHO',X.chaikin,'',ink]],zero:true,dp:0,axis:fK,fmt:fInt},
+ 81:{title:t('Elder Force Index 13 · 美元×股','Elder Force Index 13 · USD×shares'),series:[['EFI',X.efi,'',ink]],zero:true,dp:0,axis:fK,fmt:fInt},
+ 85:{title:'Balance of Power',series:[['BOP',X.bop,'',ink,'bars'],['SMA 14',X.bopS,'',ink]],min:-1,max:1,zero:true,dp:2},
+ 88:{title:t('Ulcer Index 14 · %','Ulcer Index 14 · %'),series:[['UI',X.ulcer,'',ink]],floor:0,dp:2}};}
+const EXTRA_NAMES={3:'WMA 20',5:'VWMA 20',13:'Stochastic 14/3/3',14:'Williams %R 14',15:'CCI 20',16:'ROC 10',17:'Momentum 10',19:'MFI 14',22:'BBW 20/2',23:'%B 20/2',24:'Donchian 20',25:'Keltner 20 · ATR10×2',26:'Envelope SMA20 ±3%',34:'OBV',38:'Parabolic SAR',39:'Supertrend 10/3',41:'ADX 14',42:'DMI 14',43:'Aroon 14',...MORE_NAMES};
 export const extraChartIds=Object.freeze(Object.keys(EXTRA_NAMES).map(Number));
-const PANEL_IDS=[13,14,15,16,17,19,22,23,34,41,42,43];
+const PANEL_IDS=[13,14,15,16,17,19,22,23,34,41,42,43,...MORE_PANEL];
 function extraOverlays(id,X,t){const bb=[[t('上轨 BB20·2σ','Upper BB20·2σ'),X.bbU,'5 3',palette.line],[t('中轨 SMA20','Middle SMA20'),X.sma20,'',palette.ink],[t('下轨','Lower'),X.bbL,'5 3',palette.line]];
- return id===3?[['WMA 20',X.wma,'',palette.ink]]:id===5?[['VWMA 20',X.vwma,'',palette.ink],['SMA 20',X.sma20,'6 4',palette.line]]:id===22||id===23?bb:id===24?[[t('上轨 20根最高','Upper 20-bar high'),X.dcU,'5 3',palette.line],[t('中线','Middle'),X.dcM,'',palette.ink],[t('下轨 20根最低','Lower 20-bar low'),X.dcL,'5 3',palette.line]]:id===25?[[t('上轨','Upper'),X.kcU,'5 3',palette.line],['EMA 20',X.kcM,'',palette.ink],[t('下轨','Lower'),X.kcL,'5 3',palette.line]]:id===26?[['+3%',X.envU,'5 3',palette.line],['SMA 20',X.sma20,'',palette.ink],['−3%',X.envL,'5 3',palette.line]]:id===38?[['SAR 0.02/0.02/0.20',X.sar,'',palette.ink,'dots']]:id===39?[[t('向上跟踪','Up-trend line'),X.st.map((s,i)=>X.stDir[i]===1?s:null),'',palette.ink],[t('向下跟踪','Down-trend line'),X.st.map((s,i)=>X.stDir[i]===-1?s:null),'5 3',palette.line]]:[];}
+ return id===3?[['WMA 20',X.wma,'',palette.ink]]:id===5?[['VWMA 20',X.vwma,'',palette.ink],['SMA 20',X.sma20,'6 4',palette.line]]:id===22||id===23?bb:id===24?[[t('上轨 20根最高','Upper 20-bar high'),X.dcU,'5 3',palette.line],[t('中线','Middle'),X.dcM,'',palette.ink],[t('下轨 20根最低','Lower 20-bar low'),X.dcL,'5 3',palette.line]]:id===25?[[t('上轨','Upper'),X.kcU,'5 3',palette.line],['EMA 20',X.kcM,'',palette.ink],[t('下轨','Lower'),X.kcL,'5 3',palette.line]]:id===26?[['+3%',X.envU,'5 3',palette.line],['SMA 20',X.sma20,'',palette.ink],['−3%',X.envL,'5 3',palette.line]]:id===38?[['SAR 0.02/0.02/0.20',X.sar,'',palette.ink,'dots']]:id===39?[[t('向上跟踪','Up-trend line'),X.st.map((s,i)=>X.stDir[i]===1?s:null),'',palette.ink],[t('向下跟踪','Down-trend line'),X.st.map((s,i)=>X.stDir[i]===-1?s:null),'5 3',palette.line]]:moreOverlays(id,X,t);}
 const f2=v=>v==null?'—':v.toFixed(2),fInt=v=>v==null?'—':Math.round(v).toLocaleString('en-US'),fK=v=>`${(v/1000).toFixed(0)}k`;
 function extraPanel(id,X,t){const ink=palette.ink,ln=palette.line,mu=palette.muted;
  return {13:{title:'Stochastic 14/3/3',series:[['%K',X.stK,'',ink],['%D',X.stD,'5 3',ln]],min:0,max:100,refs:[20,80],dp:0},
@@ -95,13 +163,13 @@ function extraPanel(id,X,t){const ink=palette.ink,ln=palette.line,mu=palette.mut
  34:{title:t('OBV · 累计成交量（股）','OBV · cumulative shares'),series:[['OBV',X.obv,'',ink]],dp:0,axis:fK,fmt:fInt},
  41:{title:'ADX 14',series:[['ADX',X.adx,'',ink]],min:0,refs:[20,25],dp:0},
  42:{title:'DMI 14',series:[['+DI',X.pDI,'',ink],['−DI',X.mDI,'5 3',ln],['ADX',X.adx,'2 3',mu]],min:0,dp:0},
- 43:{title:'Aroon 14',series:[['Up',X.aroonUp,'',ink],['Down',X.aroonDn,'5 3',ln]],min:0,max:100,dp:0}}[id];}
+ 43:{title:'Aroon 14',series:[['Up',X.aroonUp,'',ink],['Down',X.aroonDn,'5 3',ln]],min:0,max:100,dp:0},...morePanels(X,t)}[id];}
 function extraPanelSvg(id,X,t,start,n,plot,text){const P=extraPanel(id,X,t),fmt=P.fmt||(v=>v==null?'—':v.toFixed(P.dp)),axis=P.axis||(v=>v.toFixed(P.dp)),ov=P.series.flatMap(s=>s[1].slice(start,start+n).filter(v=>v!=null)).concat(P.refs||[]);if(P.zero)ov.push(0);
  let min=P.min??Math.min(...ov),max=P.max??Math.max(...ov);const pad=Math.max((max-min)*.08,1e-6);if(P.min==null)min-=pad;if(P.max==null)max+=pad;if(P.floor!=null)min=Math.max(min,P.floor);max=Math.max(max,min+.01);
  const top=400,bottom=526,y=v=>bottom-(v-min)/(max-min)*(bottom-top);let svg='';const refY=(P.refs||[]).map(y);for(let k=0;k<3;k++){const v=min+(max-min)*k/2;svg+=`<path d="M44 ${y(v)}H668" stroke="${palette.grid}"/>`+(refY.some(r=>Math.abs(r-y(v))<13)?'':text(680,y(v)+4,axis(v)));}
  for(const r of P.refs||[])svg+=`<path d="M44 ${y(r)}H668" stroke="${palette.muted}" stroke-dasharray="4 4"/>`+text(680,y(r)+4,String(r));
  if(P.zero&&min<0&&max>0)svg+=`<path d="M44 ${y(0)}H668" stroke="${palette.muted}"/>`;
- P.series.forEach(([,a,dash,color])=>svg+=plot(a,y,color,dash));svg+=text(18,389,P.title);
+ P.series.forEach(([,a,dash,color,kind])=>{if(kind==='bars'){const base=Math.max(min,Math.min(max,P.min!=null&&P.min>=0?P.min:0));a.slice(start,start+n).forEach((v,i)=>{if(v==null)return;const cx=52+(i+.5)*608/Math.max(48,n),yy=y(v),y0=y(base);svg+=`<rect x="${(cx-3).toFixed(2)}" y="${Math.min(yy,y0).toFixed(2)}" width="6" height="${Math.max(.7,Math.abs(yy-y0)).toFixed(2)}" fill="${v>=base&&!(P.refs||[]).includes(1)||v>=1?palette.up:palette.down}" opacity=".7"/>`;});}else svg+=plot(a,y,color,dash);});svg+=text(18,389,P.title);
  return {svg,legend:`${P.title}: ${P.series.map(([name,a])=>`${name} ${fmt(a[start+n-1])}`).join(' / ')}`};}
 function extraReadout(id,X,i,t){if(PANEL_IDS.includes(id)){const P=extraPanel(id,X,t),fmt=P.fmt||(v=>v==null?'—':v.toFixed(2));return P.series.map(([name,a])=>`${name} ${fmt(a[i])}`).join(t('、',', '));}
  if(id===38)return X.sarUp[i]?t(`SAR ${f2(X.sar[i])}（点在K线下方，向上跟踪）`,`SAR ${f2(X.sar[i])} (below the candle, tracking upward)`):t(`SAR ${f2(X.sar[i])}（点在K线上方，向下跟踪）`,`SAR ${f2(X.sar[i])} (above the candle, tracking downward)`);
@@ -126,3 +194,34 @@ const EXTRA_READING={
 41:['副图黑线ADX只衡量趋势强弱，不分涨跌；20、25虚线是经验参考。价格下跌时ADX同样可能上升。','The lower black ADX line measures trend strength only, not direction; 20 and 25 are rules of thumb. ADX can rise while price falls.'],
 42:['黑线+DI、蓝灰虚线−DI分别比较向上与向下的运动，灰色点线是ADX强度。两条DI交叉只说明计算窗口内哪个方向的运动更大。','Black +DI and blue-gray dashed −DI compare upward and downward movement; the gray dotted line is ADX strength. A DI cross only says which direction moved more within the window.'],
 43:['黑线Up、蓝灰虚线Down衡量最近15根（长度14）里最高点、最低点距今多久：刚创新高时Up为100，最高点在14根前则为0。数值不是涨跌百分比。','Black Up and blue-gray dashed Down measure how recently the 15-bar window (length 14) set its high and low: a fresh high makes Up 100, a high 14 bars ago makes it 0. Values are not returns.']};
+
+Object.assign(EXTRA_READING,{
+4:['黑线是20期SMMA（也叫RMA，Wilder平滑）：每根只用1/20的权重吸收新收盘，比同长度SMA更平缓、更慢；蓝灰虚线是SMA 20作对照。RSI和ATR内部用的就是这种平滑。','Black: 20-bar SMMA (also RMA, Wilder smoothing), absorbing each new close with weight 1/20, so it is smoother and slower than an SMA of equal length (blue-gray dashed). RSI and ATR use this smoothing internally.'],
+6:['黑线是20期HMA：先用2×WMA(10)−WMA(20)抵消一部分滞后，再用WMA(4)平滑。它转向比蓝灰虚线SMA 20快得多，但在震荡段也更容易来回拐头。','Black: 20-bar HMA, built from 2 × WMA(10) − WMA(20) to offset lag, then smoothed by WMA(4). It turns much sooner than the blue-gray dashed SMA 20, and also flips more often in choppy stretches.'],
+7:['黑线是DEMA 20 = 2×EMA−EMA(EMA)，蓝灰虚线是普通EMA 20。DEMA减掉了部分滞后，所以更贴近价格；名字里的“双”指算法用了两层EMA，不是把均线算两遍那么简单。','Black: DEMA 20 = 2 × EMA − EMA(EMA); blue-gray dashed: plain EMA 20. DEMA removes part of the lag and hugs price more closely. “Double” refers to the two EMA layers in the formula.'],
+8:['黑线是TEMA 20 = 3×EMA1−3×EMA2+EMA3，蓝灰虚线是EMA 20。三层EMA让滞后更小，转折处几乎贴着K线，但也会更早被短暂波动带偏。','Black: TEMA 20 = 3 × EMA1 − 3 × EMA2 + EMA3; blue-gray dashed: EMA 20. Three layers reduce lag further, so it nearly tracks candles at turns, but brief swings also pull it off course sooner.'],
+10:['五条EMA（10、20、30、40、50）组成均线带：短线在上、长线在下且彼此张开，表示近期价格一直高于较早价格；线束拧在一起表示方向不清。本图为了在120根模拟K线里完整显示而选了较短参数，平台默认值可能不同。','Five EMAs (10, 20, 30, 40, 50) form the ribbon. Short above long and fanning out means recent prices have stayed above older ones; a twisted bundle means no clear direction. Shorter lengths are used here to fit 120 synthetic bars; platform defaults may differ.'],
+18:['副图PPO = (EMA12−EMA26)÷EMA26×100，和MACD同构但用百分比，柱是PPO与9期信号线之差。因为是百分比，不同价位的资产可以直接比较。','Below: PPO = (EMA12 − EMA26) ÷ EMA26 × 100, the same structure as MACD but in percent; bars are PPO minus its 9-bar signal. Being a percentage, it compares across assets with different price levels.'],
+20:['主图黑线是EMA 13。副图Bull = 最高−EMA13，Bear = 最低−EMA13（Elder原版两条分开）；TradingView内置版把两者相加成一条。Bear在0上方说明这一根最低也高于EMA13。','Price panel: EMA 13. Below, Bull = high − EMA13 and Bear = low − EMA13 (Elder’s original, shown separately); TradingView’s built-in adds them into one line. Bear above zero means even the bar’s low sat above EMA13.'],
+28:['副图NATR = ATR14÷收盘×100，把美元波幅换成百分比。价格水平不同的资产可以直接比较；它仍然只衡量波动大小，不指示方向。','Below: NATR = ATR14 ÷ close × 100, converting dollar range into a percentage, so assets at different price levels compare directly. It still measures volatility only, not direction.'],
+30:['副图是最近20根收盘的总体标准差（与布林带同一算法），单位是美元。数值高表示收盘彼此分散，不代表价格在涨或跌。','Below: population standard deviation of the last 20 closes (the same calculation as Bollinger Bands), in USD. High values mean closes are spread out, not that price is rising or falling.'],
+33:['副图RVOL = 当根成交量÷前20根平均量，1倍虚线是“和平时一样”。2倍表示这一小时成交是平常的两倍，颜色与方向无关。','Below: RVOL = this bar’s volume ÷ the average of the prior 20 bars; the dashed 1× line means “normal”. 2× means twice the usual hourly volume; it carries no direction.'],
+35:['副图PVT按涨跌幅分配成交量：收盘涨1%就加上1%的成交量，跌则减。与OBV不同，小幅波动只贡献一小部分；绝对数取决于起算点，先看方向。','Below: PVT allocates volume by percentage change: a 1% higher close adds 1% of that bar’s volume, a lower close subtracts. Unlike OBV, small moves contribute little; the level depends on the start bar, so read direction first.'],
+36:['副图PVO = (成交量EMA12−EMA26)÷EMA26×100，就是“成交量版PPO”。正值表示近期成交比较早时期活跃，与价格涨跌无关。','Below: PVO = (volume EMA12 − EMA26) ÷ EMA26 × 100, a “PPO of volume”. Positive values mean recent volume is busier than earlier volume, regardless of price direction.'],
+44:['副图 = Aroon Up − Aroon Down，范围−100到100。正值表示最近15根里的最高点比最低点出现得更晚；它说的是时间先后，不是涨幅。','Below: Aroon Up − Aroon Down, from −100 to 100. Positive means the 15-bar high occurred more recently than the low; it is about timing, not size of moves.'],
+45:['黑线VI+比较本根最高与前一根最低的距离，蓝灰虚线VI−比较本根最低与前一根最高，各自除以14根真实波幅之和。两线交叉只说明近14根哪一边的伸展更大。','Black VI+ compares this high with the prior low, blue-gray dashed VI− compares this low with the prior high, each divided by the 14-bar sum of true range. A cross only says which side stretched more over 14 bars.'],
+46:['副图0—100，数值高表示近14根来回震荡、净移动小，数值低表示走得更直；38.2/61.8虚线是常见参考。它不说明方向。','The 0–100 panel: high values mean the last 14 bars chopped back and forth with little net travel; low values mean a straighter path. 38.2/61.8 are common references. It gives no direction.'],
+52:['黑线LSMA 25是最近25根收盘做直线回归后，回归线在最新一根的位置；蓝灰虚线是SMA 20。它对直线趋势跟得很紧，但遇到拐点会冲过头。','Black: LSMA 25, the value at the latest bar of a straight-line regression through the last 25 closes; blue-gray dashed: SMA 20. It tracks straight trends closely but overshoots at turns.'],
+57:['副图是“RSI的随机指标”：先算RSI 14，再看它在最近14个RSI读数区间中的位置，%K、%D各平滑3期。它比RSI敏感得多，经常贴着0或100。','Below: a Stochastic of RSI. RSI 14 is located within its own 14-reading range, then %K and %D are each smoothed over 3. It is far more sensitive than RSI and often pins at 0 or 100.'],
+59:['副图CMO 9 = (上涨幅度和−下跌幅度和)÷两者之和×100，范围−100到100。与RSI用料相同，但不平滑、以0为中线；±50虚线是常见参考。','Below: CMO 9 = (sum of up moves − sum of down moves) ÷ their total × 100, from −100 to 100. Same inputs as RSI but unsmoothed and centred on zero; ±50 are common references.'],
+60:['副图TSI把逐根价差先做25期、再做13期双重EMA平滑，再除以同样平滑后的绝对价差，蓝灰虚线是13期信号线。读数在−100到100之间，越过0表示平滑后的净变动转正。','Below: TSI double-smooths bar-to-bar changes (EMA 25 then 13) and divides by the same smoothing of absolute changes; blue-gray dashed is a 13-bar signal. Range −100 to 100; crossing zero means the smoothed net change turned positive.'],
+61:['副图TRIX是收盘三重EMA 18的逐根百分比变化，蓝灰虚线是9期信号。三层平滑滤掉了大部分小波动，所以数值很小、转向很慢。部分平台用对数价格计算，读数会略有不同。','Below: TRIX is the bar-to-bar % change of a triple EMA 18 of closes, with a 9-bar signal (blue-gray dashed). Three layers filter most small swings, so values are tiny and turns slow. Some platforms use log prices, giving slightly different readings.'],
+62:['副图UO把7、14、28三个窗口的“买压÷真实波幅”按4:2:1加权平均，范围0—100，30/70虚线是常见参考。多窗口是为了减少单一周期的假信号，并不消除滞后。','Below: UO averages buying pressure ÷ true range over 7, 14 and 28 bars with weights 4:2:1, from 0 to 100; 30/70 are common references. Multiple windows reduce single-period noise but do not remove lag.'],
+63:['副图AO = 中价(高+低)/2的5期SMA − 34期SMA，用柱显示；绿柱表示在0上方，红柱在0下方（部分平台按“比前一根高或低”上色）。它是不带信号线的简化MACD。','Below: AO = SMA 5 − SMA 34 of the midpoint (high+low)/2, drawn as bars; green above zero, red below (some platforms colour by rising or falling versus the prior bar). It is a simplified MACD without a signal line.'],
+77:['副图按收盘在当根高低区间的位置分配成交量：收在最高处加满全部量，收在最低处减去全部量，正中间不加不减，再逐根累计。注意它不看与前一根相比是否上涨。','Below: volume is allocated by where the close sits in the bar’s range: at the high it adds all volume, at the low it subtracts all, at the midpoint nothing, then accumulates. It ignores whether the close beat the prior bar.'],
+78:['副图CMF = 最近20根(位置系数×成交量)之和÷成交量之和，范围−1到1。正值表示这20根大多收在各自区间的上半部分；它不是实际资金流入额。','Below: CMF = sum over 20 bars of (close-location factor × volume) ÷ sum of volume, from −1 to 1. Positive means most of those bars closed in the upper half of their range; it is not an actual money inflow.'],
+79:['副图 = A/D线的3期EMA − 10期EMA，单位是股。它衡量A/D线最近的加速或减速；过0只说明短期A/D动量换了方向。','Below: EMA 3 − EMA 10 of the A/D line, in shares. It measures recent acceleration of A/D; a zero cross only means short-term A/D momentum changed direction.'],
+81:['副图 = (本根收盘−前根收盘)×成交量，再做13期EMA。价差和成交量都大时读数才大；单位是美元×股，不同资产的绝对值不能直接比较。','Below: (close − prior close) × volume, smoothed by EMA 13. It is large only when both the price change and volume are large; units are USD × shares, so levels do not compare across assets.'],
+85:['副图柱 = (收盘−开盘)÷(最高−最低)，范围−1到1；黑线是14期平均。1表示开在最低、收在最高。TradingView内置版默认不平滑，只显示柱。','Below: bars show (close − open) ÷ (high − low), from −1 to 1; the black line is a 14-bar average. 1 means it opened at the low and closed at the high. TradingView’s built-in shows unsmoothed values by default.'],
+88:['副图先算每根收盘距最近14根最高收盘的回撤百分比，再取最近14个回撤的平方均值开方。只看下跌深度和持续时间，上涨不会推高它。','Below: each close’s % drawdown from the highest close of the last 14 bars, then the root-mean-square of the last 14 drawdowns. Only depth and duration of declines count; rallies do not raise it.'],
+89:['黑线多头止损 = 最近22根最高价−3×ATR(22)，蓝灰虚线空头止损 = 最近22根最低价+3×ATR(22)。它们表示“离极值多远算回撤过大”，不是买卖点；部分版本用收盘最高/最低代替最高价/最低价。','Black long stop = 22-bar highest high − 3 × ATR(22); blue-gray dashed short stop = 22-bar lowest low + 3 × ATR(22). They mark how far from an extreme a pullback becomes large, not entries; some versions use highest/lowest close instead.']});
