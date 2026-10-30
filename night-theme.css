@@ -436,3 +436,6 @@ iframe{border-radius:12px}
 .book-body{padding:2px 20px 20px;border-top:1px solid var(--n-line)}
 .book-body p,.book-body li{line-height:1.95;color:var(--n-ink)}
 .book-body h3{margin:24px 0 6px;color:var(--n-gold);font-size:17px}
+.book-compare{margin:16px 0 6px;padding:14px 18px;border-left:3px solid var(--n-gold);background:rgba(200,159,96,.08);border-radius:0 10px 10px 0}
+.book-compare b{color:var(--n-gold);font-size:14px;letter-spacing:.06em}
+.book-compare p{margin:6px 0 0;line-height:1.9;color:var(--n-ink)}
