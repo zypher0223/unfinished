@@ -439,3 +439,12 @@ iframe{border-radius:12px}
 .book-compare{margin:16px 0 6px;padding:14px 18px;border-left:3px solid var(--n-gold);background:rgba(200,159,96,.08);border-radius:0 10px 10px 0}
 .book-compare b{color:var(--n-gold);font-size:14px;letter-spacing:.06em}
 .book-compare p{margin:6px 0 0;line-height:1.9;color:var(--n-ink)}
+svg text.ann-label{fill:#e6e3f0}
+svg text.ann-label[fill="#b07d2a"]{fill:var(--n-gold)}
+svg text.ann-label[fill="#247566"]{fill:var(--n-up)}
+svg text.ann-label[fill="#b34840"]{fill:var(--n-down)}
+svg [stroke="#b07d2a"]{stroke:var(--n-gold)}
+svg [fill="#b07d2a"]{fill:var(--n-gold)}
+svg [stroke="#4c5985"]{stroke:#8d93c9}
+svg [fill="#4c5985"]{fill:#8d93c9}
+.concept-figure .market-chart-svg{min-width:640px}
