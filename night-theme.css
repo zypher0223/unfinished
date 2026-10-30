@@ -448,3 +448,7 @@ svg [fill="#b07d2a"]{fill:var(--n-gold)}
 svg [stroke="#4c5985"]{stroke:#8d93c9}
 svg [fill="#4c5985"]{fill:#8d93c9}
 .concept-figure .market-chart-svg{min-width:640px}
+.book-fig{margin:18px 0 22px;padding:10px;background:#f4f3ee;border-radius:10px}
+.book-fig img{display:block;width:100%;height:auto;border-radius:4px}
+.book-fig figcaption{margin-top:8px;color:#1c1f2b;font-size:14px;line-height:1.6;font-weight:600}
+.book-fig figcaption span{display:block;font-weight:400;color:#5d6070;font-size:12px}
