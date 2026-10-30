@@ -423,3 +423,16 @@ iframe{border-radius:12px}
   .orbit-tag{font-size:11px;padding:5px 10px 5px 8px}
   .night-foot{flex-direction:column;align-items:flex-start}
 }
+
+/* Book excerpts (书中讲解) */
+.book-source{font-size:13px;line-height:1.9;color:var(--n-muted)}
+.book-source a{color:var(--n-accent-ink);text-underline-offset:3px}
+.book-chapter{border:1px solid var(--n-line);border-radius:12px;margin:14px 0;background:rgba(255,255,255,.025)}
+.book-chapter>summary{cursor:pointer;list-style:none;display:flex;justify-content:space-between;align-items:center;gap:12px;padding:15px 18px;font-weight:600;color:#fff}
+.book-chapter>summary::-webkit-details-marker{display:none}
+.book-chapter>summary:before{content:"▸";color:var(--n-accent-ink);margin-right:2px}
+.book-chapter[open]>summary:before{content:"▾"}
+.book-chapter>summary span{margin-left:auto;font-weight:400;font-size:12px;color:var(--n-muted);white-space:nowrap}
+.book-body{padding:2px 20px 20px;border-top:1px solid var(--n-line)}
+.book-body p,.book-body li{line-height:1.95;color:var(--n-ink)}
+.book-body h3{margin:24px 0 6px;color:var(--n-gold);font-size:17px}
