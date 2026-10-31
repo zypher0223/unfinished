@@ -37,12 +37,12 @@
     hiDay: ['sleepy', 'Daytime… let me wake up. Okay. Let’s go.'],
     hiLate: ['sleepy', 'Studying this late? I’ll keep you company — but not for long.'],
     hiStreak: ['happy', 'Day {n} in a row! My moonlight got a little brighter.'],
-    m10: ['explain', 'Ten focused minutes. I’ll log that as tuition — in moonlight.'],
+    m10: ['explain', 'Ten focused minutes! Logged as tuition — one step closer to buying back my Moon Palace.'],
     m25: ['think', '25 minutes. Stand up, drink some water? The market isn’t going anywhere.'],
     m50: ['sleepy', '50 minutes! Even I’m sleepy. Take five, please.'],
     again: ['sleepy', 'Another half hour. Break time — eyes off the screen for a bit.'],
     late: ['sleepy', 'The market will be here tomorrow, and so will the moon. Go to sleep.'],
-    d30: ['happy', '30 minutes today. More careful than I ever was with candles.'],
+    d30: ['happy', '30 minutes today. Way more careful than me — I lost a whole Moon Palace. 😭'],
     d60: ['happy', 'A full hour today! I’m impressed. Truly.'],
     d120: ['pout', 'Two hours today… that’s great, but please rest your eyes.'],
     done: ['happy', 'Another lesson done! That pays off 0.3 g of my moonlight… I mean: well done!'],
@@ -53,12 +53,12 @@
     hiDay: ['sleepy', '白天……我先醒醒。好了，开始吧。'],
     hiLate: ['sleepy', '这么晚还来学？我陪你，但别太久哦。'],
     hiStreak: ['happy', '连续第 {n} 天了！我的月光都亮了一点。'],
-    m10: ['explain', '专心学了 10 分钟，课时费我先用月光替你记上。'],
+    m10: ['explain', '专心学了 10 分钟！课时费记上，月宫的首付又凑了一点～'],
     m25: ['think', '25 分钟啦，站起来喝口水？行情不会跑。'],
     m50: ['sleepy', '50 分钟了！我都犯困了，你休息 5 分钟好不好。'],
     again: ['sleepy', '又过了半小时，让眼睛离开屏幕歇一会儿～'],
     late: ['sleepy', '行情明天还在，月亮也还在，先睡吧。'],
-    d30: ['happy', '今天累计 30 分钟，比我当年看K线认真多了。'],
+    d30: ['happy', '今天累计 30 分钟，比我当年认真多了。我当年可是把月宫都亏没了 😭'],
     d60: ['happy', '今天学满 1 小时！我是真的佩服。'],
     d120: ['pout', '今天 2 小时了……很棒，但眼睛要休息！'],
     done: ['happy', '又学完一课！还了 0.3 克月光……我是说，你真棒！'],
@@ -137,12 +137,20 @@
   var REDUCED = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
 
   function setMood(k) { mood = k; if (img) img.src = art(k); }
+  // resting pose: by day she mostly naps; at night she alternates between reading and thinking
+  function isDay() { var hr = new Date().getHours(); return hr >= 6 && hr < 18; }
+  function restMood() {
+    if (idle) return 'nap';
+    if (isDay()) return Math.random() < 0.75 ? 'nap' : (Math.random() < 0.5 ? 'read' : 'think');
+    return Math.random() < 0.5 ? 'read' : 'think';
+  }
+  var nextSwap = 0;
   function say(line, n, force) {
     if (!box || box.hidden) return;
     var now = Date.now(); if (!force && now - lastBubble < 90000) return; lastBubble = now;
     bubble.textContent = line[1].replace('{n}', n); bubble.hidden = false; setMood(line[0]);
     box.classList.remove('is-pop'); void box.offsetWidth; box.classList.add('is-pop');
-    clearTimeout(bubbleTimer); bubbleTimer = setTimeout(function () { bubble.hidden = true; setMood(idle ? 'sleepy' : 'think'); }, 7000);
+    clearTimeout(bubbleTimer); bubbleTimer = setTimeout(function () { bubble.hidden = true; setMood(restMood()); nextSwap = Date.now() + 45000 + Math.random() * 45000; }, 7000);
   }
   function refreshMe() {
     if (!me) return; var s = data(), t = mins(s.d[dayKey()] || 0);
@@ -151,7 +159,7 @@
     if (!card.hidden) cardStats.forEach(function (row) { row[1].textContent = row[2](s); });
   }
   function buildCompanion() {
-    img = h('img', { class: 'ucp-img', src: art('think'), alt: '', width: '96', height: '96', decoding: 'async' });
+    img = h('img', { class: 'ucp-img', src: art(restMood()), alt: '', width: '96', height: '96', decoding: 'async' });
     badge = h('span', { class: 'ucp-badge', 'aria-hidden': 'true', text: '0′' });
     me = h('button', { type: 'button', class: 'ucp-me', 'aria-expanded': 'false', onclick: function () { card.hidden = !card.hidden; me.setAttribute('aria-expanded', String(!card.hidden)); if (!card.hidden) { bubble.hidden = true; refreshMe(); } } }, [img, badge]);
     bubble = h('p', { class: 'ucp-bubble', role: 'status', 'aria-live': 'polite', hidden: true });
@@ -186,7 +194,7 @@
   }
   function tick() {
     var now = Date.now(), active = document.visibilityState === 'visible' && now - lastActive < 120000;
-    if (!active) { if (!idle && document.visibilityState === 'visible') { idle = true; if (bubble.hidden) setMood('sleepy'); badge.textContent = L.nap; } return; }
+    if (!active) { if (!idle && document.visibilityState === 'visible') { idle = true; if (bubble.hidden) setMood('nap'); badge.textContent = L.nap; } return; }
     var STEP = 5; sessionSec += STEP;
     var s = data(), d = dayKey(); s.d[d] = (s.d[d] || 0) + STEP; s.total = (s.total || 0) + STEP; if (LKEY) s.k[LKEY] = (s.k[LKEY] || 0) + STEP;
     var keys = Object.keys(s.d).sort(); while (keys.length > 120) delete s.d[keys.shift()];
@@ -199,11 +207,12 @@
     if (m >= 80 && (m - 50) % 30 === 0 && fired.again !== m) { fired.again = m; say(L.again, 0, true); }
     if (hr < 5 && m >= 15 && !fired.late) { fired.late = 1; say(L.late, 0, true); }
     [[30, 'd30'], [60, 'd60'], [120, 'd120']].forEach(function (x) { if (dm >= x[0] && df.indexOf(x[1]) < 0) { df.push(x[1]); save(DKEY, s); say(L[x[1]], 0, x[0] >= 60); } });
+    if (bubble.hidden && now > nextSwap) { setMood(restMood()); nextSwap = now + 45000 + Math.random() * 45000; }
     refreshMe();
   }
   function activity() {
     var wasIdle = idle; lastActive = Date.now();
-    if (wasIdle) { idle = false; if (box && !box.hidden) { setMood('think'); refreshMe(); say(L.back); } }
+    if (wasIdle) { idle = false; if (box && !box.hidden) { setMood(restMood()); refreshMe(); say(L.back); } }
   }
   ['scroll', 'pointermove', 'pointerdown', 'keydown', 'wheel', 'touchstart', 'selectionchange'].forEach(function (ev) { (ev === 'scroll' ? window : document).addEventListener(ev, activity, { passive: true }); });
   document.addEventListener('visibilitychange', function () { if (document.visibilityState === 'visible') activity(); });
