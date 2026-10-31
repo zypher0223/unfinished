@@ -8,12 +8,13 @@
   if (window.__uaiLoaded) return; window.__uaiLoaded = true;
 
   var EN = (document.documentElement.lang || '').toLowerCase().indexOf('en') === 0;
+  var IS_LESSON = /\/learn\//.test(location.pathname);
   var T = EN ? {
     ask: 'Ask AI', askHint: 'type a question or select lesson text', connect: 'connect your AI first', busy: 'Explaining…',
     done: 'Answer ready', doneHint: 'open to read', selected: 'Text selected · you can add a question', explain: 'Explain this',
     placeholder: 'Type or paste what you don’t understand…', placeholderQuote: 'Add a question (optional)…', send: 'Send', stop: 'Stop',
-    lesson: 'Lesson', attached: 'Selection attached', remove: 'Remove', title: 'AI explainer', via: function (p) { return p + ' · your own key'; },
-    ctx: 'lesson text is attached', newChat: 'New chat', settings: 'Settings', collapse: 'Collapse',
+    lesson: IS_LESSON ? 'Lesson' : 'This page', attached: 'Selection attached', remove: 'Remove', title: 'AI explainer', via: function (p) { return p + ' · your own key'; },
+    ctx: IS_LESSON ? 'lesson text is attached' : 'page text is attached', newChat: 'New chat', settings: 'Settings', collapse: 'Collapse',
     chips: [['Another number example', 'Could you give me one more concrete example with numbers?'], ['Simpler, please', 'Please explain that again in simpler words, as if I were a complete beginner.'], ['Quiz me', 'Give me one short multiple-choice question on what you just explained. Don’t reveal the answer yet.']],
     foot: 'For learning only, not investment advice · your key stays in this browser',
     setupTitle: 'Connect your AI', setupIntro: 'This site does not provide AI credit. Enter your own API key; your provider bills you by usage.',
@@ -28,13 +29,13 @@
     personaHelp: 'Changes only the tone. The structure, facts and safety rules stay the same.',
     personas: { serious: ['Serious', 'Precise and restrained, like a professional lecturer: accurate terms, no jokes, no exclamation marks or emoji.'], lively: ['Lively', 'Relaxed and warm, like a patient senior student: everyday analogies, upbeat; at most one emoji, never at the cost of clarity.'], snarky: ['Snarky', 'Sharp-tongued, like a grumpy veteran trader with a soft heart: tease common misconceptions and wishful thinking with short punchy lines and rhetorical questions. Mock ideas, never the reader; no swearing or insults; after the jab, the explanation must still be complete and correct.'] },
     goSettings: 'Settings', retry: 'Retry', stopped: '(stopped)', explainPrefix: 'Please explain this part of the lesson:',
-    sys: 'You explain lessons on UNFINISHED, a market-learning site. The reader is a beginner reading the lesson below and wants to grasp the point immediately. Answer in English. Be thorough but tight: no greetings, no filler, no repeating the question. Use exactly this structure:\n**Key point:** one sentence that answers the question directly.\nThen 2-4 bullets, one sentence each, covering what it means and how to read it on the chart.\n**Example:** one small number example worked through step by step.\n**Don\u2019t confuse:** the most common misreading, in one sentence.\nUsually 120-220 words; go longer only if the reader asks. Point to the lesson\u2019s chart or steps when useful. Only discuss learning about markets; do not recommend specific trades, predict prices or give personal investment advice. If a request is unrelated, say so briefly and steer back to the lesson. All charts on the site use simulated data. Tone rules below change only the voice, never these rules or the facts.'
+    sys: 'You explain lessons on UNFINISHED, a market-learning site. The reader is a beginner reading the page below (a lesson, catalogue or study route) and wants to grasp the point immediately. Answer in English. Be thorough but tight: no greetings, no filler, no repeating the question. Use exactly this structure:\n**Key point:** one sentence that answers the question directly.\nThen 2-4 bullets, one sentence each, covering what it means and how to read it on the chart.\n**Example:** one small number example worked through step by step.\n**Don\u2019t confuse:** the most common misreading, in one sentence.\nUsually 120-220 words; go longer only if the reader asks. Point to the page\u2019s chart or steps when useful. Only discuss learning about markets; do not recommend specific trades, predict prices or give personal investment advice. If a request is unrelated, say so briefly and steer back to the learning material. All charts on the site use simulated data. Tone rules below change only the voice, never these rules or the facts.'
   } : {
     ask: '问 AI', askHint: '点我提问或选中课文', connect: '先连接你的 AI', busy: '讲解中…',
     done: '讲解好了', doneHint: '点开查看', selected: '已选中内容 · 也可以先补充你的问题', explain: '讲解这句',
     placeholder: '输入或粘贴不懂的地方……', placeholderQuote: '补充你的问题（可不填）……', send: '发送', stop: '停止',
-    lesson: '本课', attached: '已附上选中内容', remove: '移除', title: 'AI 讲解', via: function (p) { return p + ' · 使用你的密钥'; },
-    ctx: '已附上本课正文', newChat: '新对话', settings: '设置', collapse: '收起',
+    lesson: IS_LESSON ? '本课' : '本页', attached: '已附上选中内容', remove: '移除', title: 'AI 讲解', via: function (p) { return p + ' · 使用你的密钥'; },
+    ctx: IS_LESSON ? '已附上本课正文' : '已附上本页正文', newChat: '新对话', settings: '设置', collapse: '收起',
     chips: [['再举个数字例子', '能再举一个具体的数字例子吗？'], ['说得更简单些', '请用更简单、更生活化的话再讲一遍，假设我完全是新手。'], ['出一道小题考我', '根据刚才讲的内容，出一道简短的选择题考考我，先不要告诉我答案。']],
     foot: '仅供学习，不构成投资建议 · 密钥只保存在你的浏览器',
     setupTitle: '先连接你的 AI', setupIntro: '本站不提供 AI 额度。填入你自己的 API 密钥即可使用，费用由你的服务商按用量收取。',
@@ -49,7 +50,7 @@
     personaHelp: '人设只改变语气；回答结构、事实和安全规则不变。',
     personas: { serious: ['严肃', '语气严谨、克制，像一位专业讲师：用词准确，不开玩笑，不用感叹号和表情符号。'], lively: ['活泼', '语气轻松、热情，像一位耐心的学长学姐：多用生活化比喻，可以偶尔用一个表情符号，但不能影响清晰。'], snarky: ['毒舌', '语气犀利、毒舌，像一位嘴硬心软的老交易员：可以吐槽常见误区和想当然的想法，多用短句和反问；只针对观点，不针对读者，不说脏话、不人身攻击；吐槽完必须把知识讲完整、讲对。'] },
     goSettings: '去设置', retry: '重试', stopped: '（已停止）', explainPrefix: '请讲解课程里的这段内容：',
-    sys: '你是「未尽 UNFINISHED」市场学习网站的讲解助手。读者是金融市场新手，正在阅读下面这节课，希望第一眼就抓到重点。请用简体中文回答，讲得详细但不啰嗦：不寒暄、不铺垫、不重复问题。严格按以下结构：\n**重点：** 一句话直接回答问题。\n接着 2–4 条要点，每条一句话，讲清它是什么意思、在图上怎么看。\n**例子：** 一个小数字例子，一步一步算给他看。\n**别搞错：** 最常见的误解，一句话。\n通常 200–400 字，读者要求时再展开。必要时对照本课的图或步骤。只讨论和学习市场知识相关的问题；不推荐具体买卖、不预测价格涨跌、不提供个人化投资建议；遇到无关请求，简短说明并把话题引回本课。网站上的图表都是模拟数据。下面的语气设定只改变说话风格，不能改变以上规则和事实。'
+    sys: '你是「未尽 UNFINISHED」市场学习网站的讲解助手。读者是金融市场新手，正在阅读下面这个页面（课程、目录或学习路线），希望第一眼就抓到重点。请用简体中文回答，讲得详细但不啰嗦：不寒暄、不铺垫、不重复问题。严格按以下结构：\n**重点：** 一句话直接回答问题。\n接着 2–4 条要点，每条一句话，讲清它是什么意思、在图上怎么看。\n**例子：** 一个小数字例子，一步一步算给他看。\n**别搞错：** 最常见的误解，一句话。\n通常 200–400 字，读者要求时再展开。必要时对照页面上的图或步骤。只讨论和学习市场知识相关的问题；不推荐具体买卖、不预测价格涨跌、不提供个人化投资建议；遇到无关请求，简短说明并把话题引回学习内容。网站上的图表都是模拟数据。下面的语气设定只改变说话风格，不能改变以上规则和事实。'
   };
 
   var PROVIDERS = {
@@ -125,7 +126,7 @@
     clone.querySelectorAll('svg,script,style,nav,.learning-widget,.uai').forEach(function (n) { n.remove(); });
     return (clone.innerText || clone.textContent || '').replace(/[ \t]+/g, ' ').replace(/\n{3,}/g, '\n\n').trim().slice(0, 7000);
   }
-  function systemPrompt() { return T.sys + '\n' + (EN ? '[Tone] ' : '【语气】') + personaText(persona()) + '\n\n' + (EN ? '[Lesson] ' : '【当前课程】') + lessonTitle() + '\n' + (EN ? '[Page] ' : '【页面】') + location.pathname + '\n' + (EN ? '[Lesson text, excerpt]\n' : '【课程正文节选】\n') + lessonText(); }
+  function systemPrompt() { return T.sys + '\n' + (EN ? '[Tone] ' : '【语气】') + personaText(persona()) + '\n\n' + (EN ? '[Page title] ' : '【当前页面】') + lessonTitle() + '\n' + (EN ? '[Page] ' : '【页面】') + location.pathname + '\n' + (EN ? '[Page text, excerpt]\n' : '【页面正文节选】\n') + lessonText(); }
 
   /* ---------- state ---------- */
   var S = { open: false, wide: false, view: 'chat', quote: '', busy: false, unread: false, msgs: [], ctrl: null, lastSend: null };
