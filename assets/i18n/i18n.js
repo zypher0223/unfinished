@@ -42,7 +42,7 @@
   /* ---------- English interface for hub pages ---------- */
   var html = document.documentElement;
   html.lang = 'en'; html.classList.add('i18n-en', 'i18n-pending');
-  document.write('<style>html.i18n-pending body{visibility:hidden}html.i18n-en .night-hero-copy h1{font-size:clamp(34px,3.8vw,62px);white-space:normal}html.i18n-en .folio-section-label{font-size:13px;letter-spacing:.03em}html.i18n-en .folio-introduction{grid-template-columns:76px minmax(0,1fr)}html.i18n-en .folio-origin{grid-template-columns:76px minmax(0,1fr) auto}html.i18n-en details.english-intro,html.i18n-en .course-origin p:has(+ p[lang="en"]),html.i18n-en .bilingual-lessons section:not([lang="en"]){display:none}.i18n-note{margin:12px 0;padding:10px 14px;border:1px solid rgba(200,159,96,.45);border-radius:12px;background:rgba(200,159,96,.08);color:#e2c48f;font-size:14px}</style><script src="' + ASSETS + 'i18n/en.js?v=3"><\/script>');
+  document.write('<style>html.i18n-pending body{visibility:hidden}html.i18n-en .night-hero-copy h1{font-size:clamp(34px,3.8vw,62px);white-space:normal}html.i18n-en .folio-section-label{font-size:13px;letter-spacing:.03em}html.i18n-en .folio-introduction{grid-template-columns:76px minmax(0,1fr)}html.i18n-en .folio-origin{grid-template-columns:76px minmax(0,1fr) auto}html.i18n-en details.english-intro,html.i18n-en .course-origin p:has(+ p[lang="en"]),html.i18n-en .bilingual-lessons section:not([lang="en"]){display:none}.i18n-note{margin:12px 0;padding:10px 14px;border:1px solid rgba(200,159,96,.45);border-radius:12px;background:rgba(200,159,96,.08);color:#e2c48f;font-size:14px}</style><script src="' + ASSETS + 'i18n/en.js?v=4"><\/script>');
 
   function E() { return window.UNF_EN || { dict: {}, folio: {}, names: {} }; }
   function hook(name, fn) { var v; try { Object.defineProperty(window, name, { configurable: true, get: function () { return v; }, set: function (x) { v = fn(x); } }); } catch (e) {} }
@@ -95,15 +95,18 @@
     return out;
   }
   function fixDates(x) { return x.replace(/核查：/g, 'Checked: ').replace(/原链接：/g, 'Original link: ').replace(/。/g, '. ').replace(/\s+$/, ''); }
+  var ASCII = { 'ENYT': 'English YouTube' };
   function tr(raw) {
-    var k = raw.replace(/\s+/g, ' ').trim(); if (!k || !CJK.test(k)) return null;
+    var k = raw.replace(/\s+/g, ' ').trim();
+    if (ASCII[k]) return raw.replace(k, ASCII[k]);
+    if (!k || !CJK.test(k)) return null;
     var out = one(k);
     if (out == null) { // "中文 / English" pairs: keep the English side
       var bi = k.lastIndexOf(' / ');
       if (bi > 0) { var right = k.slice(bi + 3); if (!CJK.test(right.replace(/核查：|原链接：|。/g, ''))) out = fixDates(right); }
     }
     if (out == null && /[。]/.test(k)) { // several sentences: translate each, keep Latin ones
-      var parts = k.split(/(?<=。)\s*/).filter(Boolean), done = [];
+      var parts = k.replace(/。\s*/g, '。\u0001').split('\u0001').filter(Boolean), done = [];
       for (var j = 0; j < parts.length; j++) {
         var q = parts[j].trim(), r = CJK.test(q.replace(/。$/, '')) ? (one(q) || one(q.replace(/。$/, ''))) : fixDates(q);
         if (r == null) { done = null; break; } done.push(r);
@@ -122,7 +125,7 @@
   var SKIP = 'script,style,.uai,.ucp,.ucp-dialog';
   function walk(node) {
     if (node.nodeType === 3) { var p = node.parentElement; if (p && !p.closest(SKIP)) { var t = tr(node.nodeValue); if (t != null && t !== node.nodeValue) node.nodeValue = t; } return; }
-    if (node.nodeType !== 1 || node.closest(SKIP)) return;
+    if (node.nodeType !== 1 || node.closest(SKIP) || node.tagName === 'TITLE') return;
     ATTRS.forEach(function (a) { var v = node.getAttribute(a); if (v && CJK.test(v)) { var t = tr(v); if (t != null) node.setAttribute(a, t.trim()); } });
     if (node.tagName === 'A') fixLinks(node.parentNode || node);
     var w = document.createTreeWalker(node, NodeFilter.SHOW_TEXT | NodeFilter.SHOW_ELEMENT), n;
@@ -141,15 +144,15 @@
     if (/assessment\.html$/.test(path)) notice('Quiz questions are currently available in Chinese only.');
     if (/figures\.html$/.test(path)) notice('These chart walkthroughs are currently in Chinese only. Each English lesson includes its own annotated chart.');
     walk(document.body); fixLinks();
-    new MutationObserver(function (list) {
-      list.forEach(function (r) {
-        if (r.type === 'characterData') walk(r.target);
-        else if (r.type === 'attributes') walk(r.target);
-        else r.addedNodes.forEach(walk);
-      });
-    }).observe(document.body, { childList: true, subtree: true, characterData: true, attributes: true, attributeFilter: ATTRS.concat(['href']) });
     html.classList.remove('i18n-pending');
   }
+  // translate while the parser builds the page, before deferred scripts read it
+  new MutationObserver(function (list) {
+    list.forEach(function (r) {
+      if (r.type === 'characterData' || r.type === 'attributes') walk(r.target);
+      else r.addedNodes.forEach(function (n) { if (n.nodeType === 3 || (n.nodeType === 1 && n.tagName !== 'SCRIPT' && n.tagName !== 'STYLE')) walk(n); });
+    });
+  }).observe(html, { childList: true, subtree: true, characterData: true, attributes: true, attributeFilter: ATTRS.concat(['href']) });
   document.addEventListener('DOMContentLoaded', run);
   setTimeout(function () { html.classList.remove('i18n-pending'); }, 2500);
 })();
