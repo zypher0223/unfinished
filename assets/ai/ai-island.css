@@ -128,3 +128,6 @@ body.uai-pad{padding-bottom:104px}
 .uai-ctx span{flex:1 1 auto;min-width:0}
 .uai-bot p.uai-key{padding:10px 12px;border-radius:10px;background:rgba(200,159,96,.12);border-left:3px solid #c89f60;color:#eceaf2}
 .uai-log{position:relative}
+::highlight(uai-quote){background:rgba(123,108,217,.45);color:#fff}
+.uai .uai-attach{max-width:none;flex:0 0 auto}
+.uai-x svg{width:16px;height:16px;stroke:currentColor;flex:0 0 16px}

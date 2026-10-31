@@ -452,3 +452,7 @@ svg [fill="#4c5985"]{fill:#8d93c9}
 .book-fig img{display:block;width:100%;height:auto;border-radius:4px}
 .book-fig figcaption{margin-top:8px;color:#1c1f2b;font-size:14px;line-height:1.6;font-weight:600}
 .book-fig figcaption span{display:block;font-weight:400;color:#5d6070;font-size:12px}
+
+/* text selection: readable on the dark theme (overrides the auto-remapped rule above) */
+::selection{background:rgba(123,108,217,.45);color:#fff}
+::highlight(uai-quote){background:rgba(123,108,217,.62);color:#fff}

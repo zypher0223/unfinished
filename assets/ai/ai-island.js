@@ -167,7 +167,7 @@
   var tag = h('span', { class: 'uai-tag', text: T.lesson + ' ' + shortTitle() });
   var quoteBtn = h('button', { type: 'button', class: 'uai-quote', onclick: function () { S.wide = true; S.quoteEditing = true; render(); input.focus(); } }, [h('small', { text: T.selected }), h('span')]);
   var attach = h('span', { class: 'uai-attach' }, [h('span', { text: T.attached })]);
-  var xQuote = h('button', { type: 'button', class: 'uai-x', 'aria-label': T.remove, title: T.remove, onclick: function () { S.quote = ''; S.quoteEditing = false; render(); } }, [icon(I.x)]);
+  var xQuote = h('button', { type: 'button', class: 'uai-x', 'aria-label': T.remove, title: T.remove, onclick: function () { S.quote = ''; S.quoteEditing = false; markQuote(null); render(); } }, [icon(I.x)]);
   attach.appendChild(xQuote);
   var input = h('input', { class: 'uai-input', type: 'text', 'aria-label': T.placeholder, placeholder: T.placeholder, autocomplete: 'off', enterkeyhint: 'send' });
   var goBtn = h('button', { type: 'button', class: 'uai-go is-icon', 'aria-label': T.send, title: T.send, onclick: function () { submit(); } }, [icon(I.send)]);
@@ -235,6 +235,8 @@
   function newChat() { stop(); S.msgs = []; while (log.firstChild) log.removeChild(log.firstChild); S.open = false; S.wide = true; S.quoteEditing = true; render(); input.focus(); }
 
   /* ---------- selection → quote ---------- */
+  var HL = (window.CSS && CSS.highlights && window.Highlight) ? CSS.highlights : null;
+  function markQuote(range) { if (!HL) return; try { if (range) HL.set('uai-quote', new Highlight(range)); else HL.delete('uai-quote'); } catch (e) {} }
   var selTimer = null;
   document.addEventListener('selectionchange', function () {
     clearTimeout(selTimer);
@@ -245,7 +247,7 @@
       if (!node || !root.contains(node) || ui.contains(node)) return;
       var text = sel.toString().replace(/\s+/g, ' ').trim();
       if (text.length < 2) return;
-      S.quote = text.slice(0, 1200); S.quoteEditing = false; S.wide = true;
+      S.quote = text.slice(0, 1200); S.quoteEditing = false; S.wide = true; markQuote(sel.getRangeAt(0).cloneRange());
       if (document.activeElement === input && input.value) S.quoteEditing = true;
       render();
     }, 220);
@@ -257,7 +259,7 @@
     if (!q && !quote) { input.focus(); return; }
     if (!cfg()) { showSetup(false); return; }
     var text = quote ? T.explainPrefix + '\n「' + quote + '」' + (q ? '\n\n' + q : '') : q;
-    input.value = ''; S.quote = ''; S.quoteEditing = true;
+    input.value = ''; S.quote = ''; S.quoteEditing = true; markQuote(null);
     send(text, { quote: quote, q: q });
   }
   function bubbleMe(view) {
