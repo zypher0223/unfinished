@@ -68,7 +68,7 @@
     custom: { name: T.other, models: [], model: '', base: '', keyUrl: '', ph: '' }
   };
   var STORE = 'unfinished.ai.v1', PSTORE = 'unfinished.ai.persona.v1';
-  function readPersona() { try { var p = JSON.parse(localStorage.getItem(PSTORE) || 'null'); if (p && (p.id in T.personas || p.id === 'custom')) return p; } catch (e) {} return { id: 'serious', custom: '' }; }
+  function readPersona() { try { var p = JSON.parse(localStorage.getItem(PSTORE) || 'null'); if (p && (p.id in T.personas || p.id === 'custom')) return p; } catch (e) {} return { id: 'yue', custom: '' }; }
   function writePersona(p) { try { localStorage.setItem(PSTORE, JSON.stringify(p)); } catch (e) {} personaMem = p; }
   var personaMem = null;
   function persona() { return personaMem || readPersona(); }
