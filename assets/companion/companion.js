@@ -1,6 +1,6 @@
 /* 未尽 · 月未央学习陪伴 + 网站设置 (2026-10-31)
  * - Adds a 设置 button to the site header. The settings dialog switches the companion on or off.
- * - On lesson / course pages, 月未央 sits in the bottom-left corner, counts active study time
+ * - On lesson / course pages, 月未央 sits in the bottom-right corner, counts active study time
  *   (tab visible and the reader active in the last 2 minutes) and cheers or nudges at sensible moments.
  * Everything is stored only in this browser (localStorage); nothing is sent anywhere. */
 (function () {
