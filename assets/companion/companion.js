@@ -10,7 +10,7 @@
   var EN = (document.documentElement.lang || '').toLowerCase().indexOf('en') === 0;
   var SKEY = 'unfinished.settings.v1', DKEY = 'unfinished.study.v1';
   var ASSETS = (function () { var sc = document.currentScript || document.querySelector('script[src*="companion.js"]'); var src = sc ? sc.src : ''; return src ? src.replace(/companion\/companion\.js.*$/, '') : 'assets/'; })();
-  function art(k) { return ASSETS + 'mascot/' + k + '.webp'; }
+  function art(k) { return ASSETS + 'mascot/' + k + '.webp?v=2'; }
 
   var T = EN ? {
     settings: 'Settings', settingsTitle: 'Site settings', close: 'Close',
