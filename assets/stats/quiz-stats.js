@@ -36,7 +36,16 @@
       fetch(URL_, { method: 'POST', keepalive: true, headers: { apikey: KEY, 'content-type': 'application/json', prefer: 'return=minimal' }, body: JSON.stringify(rows) }).catch(function () {});
     } catch (e) {}
   }
+  function note() {
+    var h = document.getElementById('test-history');
+    if (!h || document.getElementById('stats-note')) return;
+    var p = document.createElement('p');
+    p.className = 'test-history'; p.id = 'stats-note'; p.style.marginTop = '4px';
+    p.textContent = '测验作答会匿名用于改进题目。';
+    h.parentNode.insertBefore(p, h.nextSibling);
+  }
   function init() {
+    note();
     var submit = document.getElementById('test-submit');
     if (submit) submit.addEventListener('click', function () { setTimeout(report, 0); });
   }
