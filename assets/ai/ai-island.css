@@ -138,3 +138,15 @@ body.uai-pad{padding-bottom:104px}
 .uai-empty{display:flex;flex-direction:column;gap:8px;padding:6px 0 2px}
 .uai-empty strong{font-size:15px;font-weight:600}
 .uai-empty p{margin:0;font-size:13px;color:var(--uai-muted)}
+/* 月未央 persona: avatar orb, answer stickers, empty-state art */
+.uai-orb.is-yue{background:#0d0e18;overflow:hidden;padding:0}
+.uai-orb.is-yue img{width:100%;height:100%;display:block;border-radius:50%;object-fit:cover}
+.uai-orb.is-yue.is-off img{filter:grayscale(.5);opacity:.75}
+.uai-yrow{display:flex;gap:10px;align-items:flex-start}
+.uai-yrow .uai-bot{flex:1 1 auto;min-width:0}
+.uai-stk{width:60px;height:60px;flex:0 0 60px;object-fit:contain;animation:uai-pop .35s ease-out}
+.uai-stk.is-sm{width:44px;height:44px;flex-basis:44px}
+.uai-empty-art{width:84px;height:84px;object-fit:contain}
+@keyframes uai-pop{from{transform:scale(.8);opacity:0}to{transform:none;opacity:1}}
+@media (prefers-reduced-motion:reduce){.uai-stk{animation:none}}
+@media (max-width:640px){.uai-stk{width:48px;height:48px;flex-basis:48px}}

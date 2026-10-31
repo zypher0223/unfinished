@@ -1,0 +1,58 @@
+/* 未尽 · 网站设置按钮 + 月未央学习陪伴 */
+.ucp-gear{display:inline-flex;align-items:center;gap:6px;flex:0 0 auto;min-height:40px;padding:0 12px;border:1px solid rgba(255,255,255,.16);border-radius:20px;background:rgba(255,255,255,.04);color:#d9d9de;font:inherit;font-size:14px;cursor:pointer;margin-left:auto}
+.lesson-header .ucp-gear{margin-left:12px}
+.ucp-gear:hover{color:#fff;border-color:rgba(255,255,255,.3);background:rgba(255,255,255,.08)}
+.ucp-gear svg{width:17px;height:17px}
+.ucp-gear:focus-visible,.ucp-dialog button:focus-visible,.ucp-dialog input:focus-visible+.ucp-track,.ucp button:focus-visible{outline:2px solid #e2c48f;outline-offset:2px}
+@media (max-width:640px){.ucp-gear span{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}.ucp-gear{width:40px;padding:0;justify-content:center}.folio-header .ucp-gear{position:absolute;right:12px;top:12px}}
+
+.ucp-dialog{width:min(440px,calc(100vw - 32px));padding:0;border:1px solid rgba(255,255,255,.24);border-radius:18px;background:rgba(22,24,34,.86);-webkit-backdrop-filter:blur(28px) saturate(170%);backdrop-filter:blur(28px) saturate(170%);color:#eceaf2;font-family:'Noto Sans SC',system-ui,-apple-system,sans-serif;box-shadow:inset 0 1px 0 rgba(255,255,255,.2),0 28px 70px rgba(0,0,0,.6)}
+.ucp-dialog::backdrop{background:rgba(0,0,0,.5)}
+.ucp-dlg-head{display:flex;align-items:center;justify-content:space-between;padding:14px 10px 10px 20px;border-bottom:1px solid rgba(255,255,255,.11)}
+.ucp-dlg-head h2{margin:0;font-size:17px;font-weight:600}
+.ucp-x{width:44px;height:44px;border:0;border-radius:10px;background:none;color:#a3a6b4;font-size:24px;line-height:1;cursor:pointer}
+.ucp-x:hover{background:rgba(255,255,255,.06);color:#fff}
+.ucp-sec{padding:18px 20px 20px;display:flex;flex-direction:column;gap:12px}
+.ucp-sec-row{display:flex;gap:14px;align-items:center}
+.ucp-sec-av{width:48px;height:48px;flex:0 0 48px}
+.ucp-sec h3{margin:0 0 6px;font-size:14px;font-weight:600;color:#c89f60}
+.ucp-switch{display:flex;align-items:center;gap:10px;cursor:pointer;font-size:15px}
+.ucp-switch input{position:absolute;opacity:0;width:1px;height:1px}
+.ucp-track{width:42px;height:24px;flex:0 0 42px;border-radius:12px;background:rgba(255,255,255,.18);position:relative;transition:background .2s}
+.ucp-track::after{content:'';position:absolute;left:3px;top:3px;width:18px;height:18px;border-radius:50%;background:#eceaf2;transition:transform .2s}
+.ucp-switch input:checked+.ucp-track{background:#b08b4f}
+.ucp-switch input:checked+.ucp-track::after{transform:translateX(18px)}
+.ucp-help{margin:0;font-size:13px;line-height:1.7;color:#a3a6b4}
+.ucp-stats-line{margin:0;font-size:13px;color:#d6d4de}
+.ucp-ghost{align-self:flex-start;min-height:36px;padding:0 14px;border:1px solid rgba(255,255,255,.24);border-radius:18px;background:transparent;color:#d6d4de;font:inherit;font-size:13px;cursor:pointer}
+.ucp-ghost:hover{border-color:rgba(255,255,255,.4);color:#fff}
+
+/* companion */
+.ucp{position:fixed;left:18px;bottom:22px;z-index:2147482990;display:flex;flex-direction:column;align-items:flex-start;gap:8px;max-width:min(300px,calc(100vw - 36px));font-family:'Noto Sans SC',system-ui,-apple-system,sans-serif;color:#eceaf2;pointer-events:none}
+.ucp[hidden]{display:none}
+.ucp>*{pointer-events:auto}
+.ucp-me{position:relative;width:96px;height:96px;padding:0;border:0;background:none;cursor:pointer;filter:drop-shadow(0 8px 18px rgba(0,0,0,.45))}
+.ucp-img{width:96px;height:96px;object-fit:contain;display:block;animation:ucp-bob 4.5s ease-in-out infinite}
+.ucp.is-pop .ucp-img{animation:ucp-hop .45s ease-out,ucp-bob 4.5s ease-in-out .45s infinite}
+.ucp.is-still .ucp-img{animation:none}
+.ucp-badge{position:absolute;right:-4px;bottom:2px;min-width:30px;padding:1px 7px;border-radius:10px;background:rgba(22,24,34,.88);border:1px solid rgba(200,159,96,.55);color:#e2c48f;font-size:11px;line-height:1.5;white-space:nowrap}
+.ucp-bubble{position:relative;margin:0 0 0 8px;padding:10px 14px;border-radius:14px 14px 14px 4px;background:rgba(30,32,46,.86);-webkit-backdrop-filter:blur(18px);backdrop-filter:blur(18px);border:1px solid rgba(255,255,255,.2);box-shadow:0 12px 30px rgba(0,0,0,.45);font-size:13px;line-height:1.7;animation:ucp-in .25s ease-out}
+.ucp-bubble[hidden],.ucp-card[hidden]{display:none}
+.ucp-card{width:260px;padding:14px 16px;border-radius:16px;background:rgba(22,24,34,.88);-webkit-backdrop-filter:blur(24px) saturate(170%);backdrop-filter:blur(24px) saturate(170%);border:1px solid rgba(255,255,255,.22);box-shadow:inset 0 1px 0 rgba(255,255,255,.18),0 18px 44px rgba(0,0,0,.5);display:flex;flex-direction:column;gap:12px;animation:ucp-in .2s ease-out}
+.ucp-card-head{display:flex;align-items:baseline;gap:8px}
+.ucp-card-head strong{font-size:15px}
+.ucp-card-head span{font-size:12px;color:#a3a6b4}
+.ucp-grid{margin:0;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+.ucp-grid div{padding:8px 10px;border-radius:10px;background:rgba(255,255,255,.05)}
+.ucp-grid dt{font-size:11px;color:#a3a6b4}
+.ucp-grid dd{margin:0;font-size:16px;color:#e2c48f}
+.ucp-grid b{font-weight:600}
+.ucp-actions{display:flex;gap:8px;flex-wrap:wrap}
+@keyframes ucp-bob{0%,100%{transform:translateY(0)}50%{transform:translateY(-4px)}}
+@keyframes ucp-hop{0%{transform:scale(.92)}60%{transform:scale(1.06)}100%{transform:none}}
+@keyframes ucp-in{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+@media (prefers-reduced-motion:reduce){.ucp-img,.ucp.is-pop .ucp-img,.ucp-bubble,.ucp-card{animation:none!important}}
+/* keep clear of the centred AI island when the screen is narrow */
+@media (max-width:1100px){.ucp{bottom:96px}}
+@media (max-width:640px){.ucp{left:8px;bottom:84px}.ucp-me,.ucp-img{width:64px;height:64px}.ucp-card{width:min(260px,calc(100vw - 24px))}}
+@media print{.ucp,.ucp-gear{display:none}}
