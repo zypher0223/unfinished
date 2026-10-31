@@ -15,6 +15,8 @@
     placeholder: 'Type or paste what you don’t understand…', placeholderQuote: 'Add a question (optional)…', send: 'Send', stop: 'Stop',
     lesson: IS_LESSON ? 'Lesson' : 'This page', attached: 'Selection attached', remove: 'Remove', title: 'AI explainer', via: function (p) { return p + ' · your own key'; },
     ctx: IS_LESSON ? 'lesson text is attached' : 'page text is attached', newChat: 'New chat', settings: 'Settings', collapse: 'Collapse',
+    openPanel: 'Open the explainer panel', closePanel: 'Hide the explainer panel', emptyTitle: 'Ask about this page', emptyHint: 'Type below, select text on the page, or start with one of these:',
+    starters: [['What is the key idea here?', 'What is the single most important idea on this page? Explain it for a beginner.'], ['Help me with an example', 'Help me understand this page with one small worked example.'], ['Common beginner mistake?', 'What do beginners most often misunderstand about this topic?']],
     chips: [['Another number example', 'Could you give me one more concrete example with numbers?'], ['Simpler, please', 'Please explain that again in simpler words, as if I were a complete beginner.'], ['Quiz me', 'Give me one short multiple-choice question on what you just explained. Don’t reveal the answer yet.']],
     foot: 'For learning only, not investment advice · your key stays in this browser',
     setupTitle: 'Connect your AI', setupIntro: 'This site does not provide AI credit. Enter your own API key; your provider bills you by usage.',
@@ -36,6 +38,8 @@
     placeholder: '输入或粘贴不懂的地方……', placeholderQuote: '补充你的问题（可不填）……', send: '发送', stop: '停止',
     lesson: IS_LESSON ? '本课' : '本页', attached: '已附上选中内容', remove: '移除', title: 'AI 讲解', via: function (p) { return p + ' · 使用你的密钥'; },
     ctx: IS_LESSON ? '已附上本课正文' : '已附上本页正文', newChat: '新对话', settings: '设置', collapse: '收起',
+    openPanel: '打开讲解面板', closePanel: '收起讲解面板', emptyTitle: '问问这一页', emptyHint: '在下面输入问题、在页面上选中一段，或者从这里开始：',
+    starters: [['这一页的核心是什么？', '这一页最核心的知识点是什么？请用新手能懂的方式讲清楚。'], ['用一个例子帮我理解', '请用一个小例子，一步一步帮我理解这一页的内容。'], ['新手最容易误解什么？', '关于这个主题，新手最容易误解的是什么？']],
     chips: [['再举个数字例子', '能再举一个具体的数字例子吗？'], ['说得更简单些', '请用更简单、更生活化的话再讲一遍，假设我完全是新手。'], ['出一道小题考我', '根据刚才讲的内容，出一道简短的选择题考考我，先不要告诉我答案。']],
     foot: '仅供学习，不构成投资建议 · 密钥只保存在你的浏览器',
     setupTitle: '先连接你的 AI', setupIntro: '本站不提供 AI 额度。填入你自己的 API 密钥即可使用，费用由你的服务商按用量收取。',
@@ -164,6 +168,12 @@
 
   // island parts
   var pill = h('button', { type: 'button', class: 'uai-pill', onclick: function () { expand(true); } });
+  var orbIcon = h('span', { class: 'uai-orb' }, [icon(I.spark)]);
+  var orbBtn = h('button', { type: 'button', class: 'uai-orbbtn', onclick: togglePanel }, [orbIcon]);
+  var empty = h('div', { class: 'uai-empty' }, [
+    h('strong', { text: T.emptyTitle }), h('p', { text: T.emptyHint }),
+    h('div', { class: 'uai-chips' }, T.starters.map(function (c) { return h('button', { type: 'button', class: 'uai-ghost', text: c[0], onclick: function () { send(c[1]); } }); }))
+  ]);
   var tag = h('span', { class: 'uai-tag', text: T.lesson + ' ' + shortTitle() });
   var quoteBtn = h('button', { type: 'button', class: 'uai-quote', onclick: function () { S.wide = true; S.quoteEditing = true; render(); input.focus(); } }, [h('small', { text: T.selected }), h('span')]);
   var attach = h('span', { class: 'uai-attach' }, [h('span', { text: T.attached })]);
@@ -174,7 +184,7 @@
   var explainBtn = h('button', { type: 'button', class: 'uai-go', text: T.explain, onclick: function () { submit(); } });
   var stopBtn = h('button', { type: 'button', class: 'uai-ghost', text: T.stop, onclick: stop });
   var xIsland = h('button', { type: 'button', class: 'uai-x', 'aria-label': T.collapse, title: T.collapse, onclick: collapse }, [icon(I.x)]);
-  [pill, tag, quoteBtn, attach, input, stopBtn, goBtn, explainBtn, xIsland].forEach(function (n) { island.appendChild(n); });
+  [orbBtn, pill, tag, quoteBtn, attach, input, stopBtn, goBtn, explainBtn, xIsland].forEach(function (n) { island.appendChild(n); });
   // keep the reader's text selection when pressing island buttons
   island.addEventListener('mousedown', function (e) { if (e.target.closest('button')) e.preventDefault(); });
   input.addEventListener('keydown', function (e) { if (e.key === 'Enter' && !e.isComposing) { e.preventDefault(); submit(); } });
@@ -193,7 +203,6 @@
       pill.appendChild(h('span', { class: 'uai-dot', 'aria-hidden': 'true' }));
       pill.appendChild(document.createTextNode(T.done)); pill.appendChild(h('span', { class: 'uai-sub', text: ' · ' + T.doneHint }));
     } else {
-      pill.appendChild(h('span', { class: 'uai-orb' + (c ? '' : ' is-off') }, [icon(I.spark)]));
       pill.appendChild(document.createTextNode(T.ask));
       pill.appendChild(h('span', { class: 'uai-sub', text: ' · ' + (c ? T.askHint : T.connect) }));
     }
@@ -216,6 +225,9 @@
     if (mode === 'quote') quoteBtn.lastChild.textContent = '“' + S.quote.replace(/\s+/g, ' ').slice(0, 120) + '”';
     if (mode === 'pill') setPill();
     panel.hidden = !S.open;
+    var off = !cfg(); orbIcon.classList.toggle('is-off', off);
+    var lbl = S.open && S.view === 'chat' ? T.closePanel : T.openPanel; orbBtn.setAttribute('aria-label', lbl); orbBtn.title = lbl; orbBtn.setAttribute('aria-expanded', String(S.open));
+    if (!S.msgs.length && !log.querySelector('.uai-me')) { if (empty.parentNode !== log) log.insertBefore(empty, log.firstChild); } else if (empty.parentNode) empty.parentNode.removeChild(empty);
     var c = cfg();
     chatView.style.display = S.view === 'chat' ? 'contents' : 'none';
     setupView.el.hidden = S.view !== 'setup';
@@ -230,9 +242,16 @@
     S.wide = true; S.quoteEditing = !S.quote; if (S.msgs.length) { S.open = true; S.view = 'chat'; }
     render(); if (focus && !input.hidden) input.focus();
   }
+  function togglePanel() {
+    S.unread = false;
+    if (!cfg()) { showSetup(false); return; }
+    if (S.open && S.view === 'chat') { S.open = false; render(); return; }
+    S.open = true; S.view = 'chat'; S.wide = true; S.quoteEditing = !S.quote;
+    render(); if (!input.hidden) input.focus({ preventScroll: true });
+  }
   function collapse() { S.open = false; S.wide = false; S.quoteEditing = false; if (S.view === 'setup') S.view = 'chat'; render(); try { pill.focus({ preventScroll: true }); } catch (e) {} }
   function showSetup(fromChat, toPersona) { S.open = true; S.view = 'setup'; S.wide = false; setupView.fill(); render(); if (toPersona) { setTimeout(function () { var f = document.getElementById('uai-persona-field'); if (f) f.scrollIntoView({ block: 'start' }); var t = document.getElementById('uai-pcustom'); if (t) t.focus(); }, 30); } else setupView.focus(); setupView.fromChat = fromChat; }
-  function newChat() { stop(); S.msgs = []; while (log.firstChild) log.removeChild(log.firstChild); S.open = false; S.wide = true; S.quoteEditing = true; render(); input.focus(); }
+  function newChat() { stop(); S.msgs = []; while (log.firstChild) log.removeChild(log.firstChild); S.open = true; S.view = 'chat'; S.wide = true; S.quoteEditing = true; render(); input.focus(); }
 
   /* ---------- selection → quote ---------- */
   var HL = (window.CSS && CSS.highlights && window.Highlight) ? CSS.highlights : null;
