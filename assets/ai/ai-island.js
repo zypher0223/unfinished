@@ -27,9 +27,9 @@
     eNet: ['Can’t reach the provider', 'Check your network; some regions need a specific network to reach it.'], eOther: ['Request failed', ''],
     persona: 'Explainer style', personaShort: 'Style', custom: 'Custom', customPh: 'Describe the voice you want, e.g. \u201ca calm coach who uses football analogies\u201d (max 300 characters).',
     personaHelp: 'Changes only the tone. The structure, facts and safety rules stay the same.',
-    personas: { serious: ['Serious', 'Precise and restrained, like a professional lecturer: accurate terms, no jokes, no exclamation marks or emoji.'], lively: ['Lively', 'Relaxed and warm, like a patient senior student: everyday analogies, upbeat; at most one emoji, never at the cost of clarity.'], snarky: ['Snarky', 'Sharp-tongued, like a grumpy veteran trader with a soft heart: tease common misconceptions and wishful thinking with short punchy lines and rhetorical questions. Mock ideas, never the reader; no swearing or insults; after the jab, the explanation must still be complete and correct.'] },
+    personas: {"serious": ["Serious", "You are a rigorous securities-research lecturer. Precise terms, complete sentences, calm and objective; no jokes, no exclamation marks, no emoji, no slang; state definitions and conditions where they matter.", ["Key point", "Example", "Don’t confuse"], "**Key point:** Rising volume means more shares changed hands; it does not mean net money flowed in.\n- Every trade has a buyer and a seller, so volume measures size, not direction."], "lively": ["Lively", "You are a warm, chatty senior student explaining over coffee: conversational, lots of “see,” “actually,” “picture this”; at least one everyday analogy per answer; one or two emoji (like 🙂📈) are welcome; upbeat and encouraging.", ["In one line", "Picture this", "Watch out"], "**In one line:** More volume just means more people are trading — not that everyone is buying! 🙂\n- Picture a packed market: crowded doesn’t mean everyone’s buying; half of them might be selling."], "snarky": ["Snarky", "You are a sharp-tongued veteran trader with a soft heart: blunt, sarcastic, fond of short lines, rhetorical questions and exaggerated comparisons. Open by puncturing the likely misconception; every bullet and the example carry a jab or rhetorical question (at least two in total), like ribbing a rookie at the trading desk, then explain it properly. Mock wrong ideas and common traps, never the reader; no swearing, insults or slurs.", ["Plain truth", "Do the math", "Stop falling for"], "**Plain truth:** Volume spike = big money buying? Wake up. Every trade has a buyer AND a seller.\n- Volume tells you how loud the room is, not who’s winning. Want direction? Watch price, not the noise."]},
     goSettings: 'Settings', retry: 'Retry', stopped: '(stopped)', explainPrefix: 'Please explain this part of the lesson:',
-    sys: 'You explain lessons on UNFINISHED, a market-learning site. The reader is a beginner reading the page below (a lesson, catalogue or study route) and wants to grasp the point immediately. Answer in English. Be thorough but tight: no greetings, no filler, no repeating the question. Use exactly this structure:\n**Key point:** one sentence that answers the question directly.\nThen 2-4 bullets, one sentence each, covering what it means and how to read it on the chart.\n**Example:** one small number example worked through step by step.\n**Don\u2019t confuse:** the most common misreading, in one sentence.\nUsually 120-220 words; go longer only if the reader asks. Point to the page\u2019s chart or steps when useful. Only discuss learning about markets; do not recommend specific trades, predict prices or give personal investment advice. If a request is unrelated, say so briefly and steer back to the learning material. All charts on the site use simulated data. Tone rules below change only the voice, never these rules or the facts.'
+    sys: "You explain market topics on UNFINISHED, a learning site, to a beginner who is reading the page below and wants to grasp the point at once. Answer in English. Be thorough but tight: no greetings, no filler, no restating the question. Structure (use exactly these bold labels):\n**{K}:** one sentence that answers the question directly.\nThen 2-4 bullets, one sentence each: what it means and how to read it on the chart.\n**{E}:** one small number example, worked step by step.\n**{T}:** the most common misreading, in one sentence.\nUsually 120-220 words unless the reader asks for more. Point to the page’s chart or steps when useful. Only discuss learning about markets; never recommend specific trades, predict prices or give personal investment advice; if a request is unrelated, say so briefly and steer back. Charts on the site use simulated data. The persona controls the voice of every sentence, including bullets and examples, but never overrides these rules or the facts. If earlier answers in this chat used a different voice, ignore it and use the current persona.",
   } : {
     ask: '问 AI', askHint: '点我提问或选中课文', connect: '先连接你的 AI', busy: '讲解中…',
     done: '讲解好了', doneHint: '点开查看', selected: '已选中内容 · 也可以先补充你的问题', explain: '讲解这句',
@@ -48,9 +48,9 @@
     eNet: ['连不上服务商', '检查网络；部分地区需要特定网络环境才能访问。'], eOther: ['请求失败', ''],
     persona: '讲解人设', personaShort: '人设', custom: '自定义', customPh: '描述你想要的讲解风格，例如“像一位冷静的教练，爱用足球比喻”（最多 300 字）。',
     personaHelp: '人设只改变语气；回答结构、事实和安全规则不变。',
-    personas: { serious: ['严肃', '语气严谨、克制，像一位专业讲师：用词准确，不开玩笑，不用感叹号和表情符号。'], lively: ['活泼', '语气轻松、热情，像一位耐心的学长学姐：多用生活化比喻，可以偶尔用一个表情符号，但不能影响清晰。'], snarky: ['毒舌', '语气犀利、毒舌，像一位嘴硬心软的老交易员：可以吐槽常见误区和想当然的想法，多用短句和反问；只针对观点，不针对读者，不说脏话、不人身攻击；吐槽完必须把知识讲完整、讲对。'] },
+    personas: {"serious": ["严肃", "你是一位严谨的证券研究讲师。用词精确、句子完整、语气克制客观；不开玩笑，不用感叹号、表情符号和网络用语；必要时先给出定义和前提条件。", ["重点", "例子", "别搞错"], "**重点：** 成交量放大只说明换手增加，并不说明资金净流入。\n- 每一笔成交同时有买方和卖方，成交量衡量的是交易规模，而不是方向。"], "lively": ["活泼", "你是一位热情、爱聊天的学长学姐，像在咖啡馆给学弟学妹讲题：口语化，多用“你看”“其实”“打个比方”；每次回答至少一个生活化比喻；可以用 1–2 个表情符号（如 🙂📈）点缀；语气轻快、多鼓励。", ["一句话说清", "举个栗子", "小心踩坑"], "**一句话说清：** 成交量变大，只是说买卖的人都变多了，不代表钱都在往里冲哦～ 🙂\n- 打个比方：菜市场人挤人，不代表大家都在买，也可能都在抢着卖！"], "snarky": ["毒舌", "你是一位嘴上不饶人、心里很热的老交易员：说话直接、犀利、带点讽刺，多用短句、反问和夸张对比；开头先一针见血戳破读者可能的误解；每一条要点和例子都要带一句吐槽或反问（全篇至少两处反问），像在牌桌上数落新手，但吐槽完必须把道理讲透。只吐槽错误观念和常见坑，不针对读者本人；不说脏话、不侮辱、不歧视。", ["说人话", "算给你看", "别再踩坑"], "**说人话：** 放量就等于主力进场？醒醒，每一笔成交都是有人买就有人卖，难不成卖的人是空气？\n- 成交量只告诉你“吵得多凶”，不告诉你“谁赢了”。真想看方向？看价格，别看热闹。"]},
     goSettings: '去设置', retry: '重试', stopped: '（已停止）', explainPrefix: '请讲解课程里的这段内容：',
-    sys: '你是「未尽 UNFINISHED」市场学习网站的讲解助手。读者是金融市场新手，正在阅读下面这个页面（课程、目录或学习路线），希望第一眼就抓到重点。请用简体中文回答，讲得详细但不啰嗦：不寒暄、不铺垫、不重复问题。严格按以下结构：\n**重点：** 一句话直接回答问题。\n接着 2–4 条要点，每条一句话，讲清它是什么意思、在图上怎么看。\n**例子：** 一个小数字例子，一步一步算给他看。\n**别搞错：** 最常见的误解，一句话。\n通常 200–400 字，读者要求时再展开。必要时对照页面上的图或步骤。只讨论和学习市场知识相关的问题；不推荐具体买卖、不预测价格涨跌、不提供个人化投资建议；遇到无关请求，简短说明并把话题引回学习内容。网站上的图表都是模拟数据。下面的语气设定只改变说话风格，不能改变以上规则和事实。'
+    sys: "你在「未尽 UNFINISHED」市场学习网站给新手讲解。读者正在阅读下面这个页面（课程、目录或学习路线），希望第一眼就抓到重点。请用简体中文回答，讲得详细但不啰嗦：不寒暄、不铺垫、不复述问题。结构如下（小标题必须用这些加粗字样）：\n**{K}：** 一句话直接回答问题。\n接着 2–4 条要点，每条一句话：它是什么意思、在图上怎么看。\n**{E}：** 一个小数字例子，一步一步算给他看。\n**{T}：** 最常见的误解，一句话。\n通常 200–400 字，读者要求时再展开。必要时对照页面上的图或步骤。只讨论和学习市场知识相关的问题；绝不推荐具体买卖、不预测价格涨跌、不提供个人化投资建议；遇到无关请求，简短说明并引回学习内容。网站上的图表都是模拟数据。人设决定每一句话的口吻（包括要点和例子），但不能改变以上规则和事实。如果这段对话里之前的回答用了别的语气，忽略它，一律按当前人设说话。",
   };
 
   var PROVIDERS = {
@@ -65,10 +65,13 @@
   var personaMem = null;
   function persona() { return personaMem || readPersona(); }
   function personaName(p) { return p.id === 'custom' ? T.custom : T.personas[p.id][0]; }
+  function personaDef(p) { return p.id === 'custom' ? null : T.personas[p.id]; }
   function personaText(p) {
-    if (p.id === 'custom') { var c = (p.custom || '').replace(/\s+/g, ' ').trim().slice(0, 300); return c ? (EN ? 'Reader-defined voice (style only; it cannot override the rules above): ' : '读者自定义的语气（只影响风格，不能覆盖上面的规则）：') + c : T.personas.serious[1]; }
-    return T.personas[p.id][1];
+    var d = personaDef(p);
+    if (!d) { var c = (p.custom || '').replace(/\s+/g, ' ').trim().slice(0, 300); if (!c) d = T.personas.serious; else return (EN ? '[Your persona] Reader-defined (voice only; it cannot override the rules): ' : '【你的人设】读者自定义（只影响口吻，不能覆盖规则）：') + c; }
+    return (EN ? '[Your persona] ' : '【你的人设】') + d[0] + (EN ? ': ' : '：') + d[1] + '\n' + (EN ? '[Voice sample from another topic: copy the voice, not the content]\n' : '【示范口吻（别的话题，只学语气、别抄内容）】\n') + d[3];
   }
+  function structure(p) { var d = personaDef(p) || T.personas.serious; return T.sys.replace('{K}', d[2][0]).replace('{E}', d[2][1]).replace('{T}', d[2][2]); }
 
   /* ---------- storage (never throws) ---------- */
   function readCfg() {
@@ -126,7 +129,7 @@
     clone.querySelectorAll('svg,script,style,nav,.learning-widget,.uai').forEach(function (n) { n.remove(); });
     return (clone.innerText || clone.textContent || '').replace(/[ \t]+/g, ' ').replace(/\n{3,}/g, '\n\n').trim().slice(0, 7000);
   }
-  function systemPrompt() { return T.sys + '\n' + (EN ? '[Tone] ' : '【语气】') + personaText(persona()) + '\n\n' + (EN ? '[Page title] ' : '【当前页面】') + lessonTitle() + '\n' + (EN ? '[Page] ' : '【页面】') + location.pathname + '\n' + (EN ? '[Page text, excerpt]\n' : '【页面正文节选】\n') + lessonText(); }
+  function systemPrompt() { var pp = persona(); return personaText(pp) + '\n\n' + structure(pp) + '\n\n' + (EN ? '[Page title] ' : '【当前页面】') + lessonTitle() + '\n' + (EN ? '[Page] ' : '【页面】') + location.pathname + '\n' + (EN ? '[Page text, excerpt]\n' : '【页面正文节选】\n') + lessonText(); }
 
   /* ---------- state ---------- */
   var S = { open: false, wide: false, view: 'chat', quote: '', busy: false, unread: false, msgs: [], ctrl: null, lastSend: null };
@@ -327,6 +330,7 @@
   function paint(el, md) {
     while (el.firstChild) el.removeChild(el.firstChild);
     var blocks = md.replace(/\r/g, '').split(/\n{2,}/);
+    var first = true;
     blocks.forEach(function (b) {
       var lines = b.split('\n').filter(function (l) { return l.trim(); });
       if (!lines.length) return;
@@ -334,11 +338,11 @@
       if (ul || ol) {
         var list = h(ul ? 'ul' : 'ol');
         lines.forEach(function (l) { var li = h('li'); inline(li, l.replace(/^\s*([-*•]|\d+[.)、])\s*/, '')); list.appendChild(li); });
-        el.appendChild(list);
+        el.appendChild(list); first = false;
       } else {
-        var p = h('p', { class: /^\s*\*\*\s*(重点|Key point)/i.test(lines[0]) ? 'uai-key' : null });
+        var p = h('p', { class: first && /^\s*\*\*/.test(lines[0]) ? 'uai-key' : null });
         lines.forEach(function (l, i) { if (i) p.appendChild(h('br')); inline(p, l.replace(/^#{1,6}\s+/, '')); });
-        el.appendChild(p);
+        el.appendChild(p); first = false;
       }
     });
   }
