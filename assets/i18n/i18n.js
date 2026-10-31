@@ -1,9 +1,9 @@
 /* 未尽 · 界面语言 (2026-10-31)
  * Loaded synchronously in <head> on every page. Picks the interface language (site settings, else the
  * browser language), and in English:
- *  - Chinese resource pages (courses/N, info/N) forward to the English written lesson;
- *  - hub pages (home, catalogs, my learning, quiz, figures) get their interface text swapped for English
- *    from assets/i18n/en.js, and every lesson link points to the English lesson.
+ *  - hub pages (home, catalogs, my learning, quiz, figures) and the lesson resource pages (courses/N, info/N)
+ *    get their interface text swapped for English from assets/i18n/en.js (Chinese twins of bilingual
+ *    blocks are hidden; original video titles stay as published), and lesson links point to the English lesson.
  * Lesson pages keep their own language (learn/N-zh / learn/N-en); Chinese content is never changed.
  * Choosing 中文 / English in a lesson's language switch also updates the site setting. */
 (function () {
@@ -30,20 +30,10 @@
 
   if (lang !== 'en') return;
 
-  var m;
-  if ((m = path.match(/\/courses\/(\d+)\.html$/))) { location.replace(ROOT + 'learn/' + m[1] + '-en.html'); return; }
-  if ((m = path.match(/\/info\/(\d+)\.html$/))) { location.replace(ROOT + 'info/learn/' + m[1] + '-en.html'); return; }
 
   function fixLinks(scope) {
     (scope || document).querySelectorAll('a[href]').forEach(function (a) {
-      var h = a.getAttribute('href'), n = h;
-      if (lessonM && (a.matches('.lesson-header > a:first-child') || a.closest('.lesson-footer')) && /(courses|info)\/\d+\.html|^\.\.\/\d+\.html/.test(h)) {
-        n = ROOT + (lessonM[1] ? 'information.html' : 'technical.html');
-      } else {
-        n = h.replace(/(^|\/)learn\/(\d+)-zh\.html/, '$1learn/$2-en.html')
-             .replace(/(^|\/)courses\/(\d+)\.html/, '$1learn/$2-en.html')
-             .replace(/(^|\/)info\/(\d+)\.html/, '$1info/learn/$2-en.html');
-      }
+      var h = a.getAttribute('href'), n = h.replace(/(^|\/)learn\/(\d+)-zh\.html/, '$1learn/$2-en.html');
       if (n !== h) a.setAttribute('href', n);
     });
   }
@@ -52,7 +42,7 @@
   /* ---------- English interface for hub pages ---------- */
   var html = document.documentElement;
   html.lang = 'en'; html.classList.add('i18n-en', 'i18n-pending');
-  document.write('<style>html.i18n-pending body{visibility:hidden}html.i18n-en .night-hero-copy h1{font-size:clamp(34px,3.8vw,62px);white-space:normal}html.i18n-en .folio-section-label{font-size:13px;letter-spacing:.03em}html.i18n-en .folio-introduction{grid-template-columns:76px minmax(0,1fr)}html.i18n-en .folio-origin{grid-template-columns:76px minmax(0,1fr) auto}.i18n-note{margin:12px 0;padding:10px 14px;border:1px solid rgba(200,159,96,.45);border-radius:12px;background:rgba(200,159,96,.08);color:#e2c48f;font-size:14px}</style><script src="' + ASSETS + 'i18n/en.js?v=2"><\/script>');
+  document.write('<style>html.i18n-pending body{visibility:hidden}html.i18n-en .night-hero-copy h1{font-size:clamp(34px,3.8vw,62px);white-space:normal}html.i18n-en .folio-section-label{font-size:13px;letter-spacing:.03em}html.i18n-en .folio-introduction{grid-template-columns:76px minmax(0,1fr)}html.i18n-en .folio-origin{grid-template-columns:76px minmax(0,1fr) auto}html.i18n-en details.english-intro,html.i18n-en .course-origin p:has(+ p[lang="en"]),html.i18n-en .bilingual-lessons section:not([lang="en"]){display:none}.i18n-note{margin:12px 0;padding:10px 14px;border:1px solid rgba(200,159,96,.45);border-radius:12px;background:rgba(200,159,96,.08);color:#e2c48f;font-size:14px}</style><script src="' + ASSETS + 'i18n/en.js?v=3"><\/script>');
 
   function E() { return window.UNF_EN || { dict: {}, folio: {}, names: {} }; }
   function hook(name, fn) { var v; try { Object.defineProperty(window, name, { configurable: true, get: function () { return v; }, set: function (x) { v = fn(x); } }); } catch (e) {} }
@@ -65,7 +55,6 @@
     var N = E().names; (Array.isArray(c) ? c : []).forEach(function (t) {
       if (N[t.key]) t.title = N[t.key];
       if (t.path) t.path = t.path.replace(/-zh\.html$/, '-en.html');
-      if (t.hub) t.hub = t.hub.replace(/^courses\/(\d+)\.html$/, 'learn/$1-en.html').replace(/^info\/(\d+)\.html$/, 'info/learn/$1-en.html');
     });
     return c;
   });
@@ -92,14 +81,39 @@
     [/^这台设备上次成绩：(.+) · (.+)，(\d+)\/(\d+)。$/, function (m) { return 'Last score on this device: ' + (D(m[1]) || m[1]) + ' · ' + (LV[m[2]] || m[2]) + ', ' + m[3] + '/' + m[4] + '.'; }],
     [/^上次选择：(.*)$/, function (m) { return 'Last choice: ' + (D(m[1]) || m[1]); }],
     [/^([A-D])\. (.+)$/, function (m) { var a = D(m[2]); return a ? m[1] + '. ' + a : null; }],
+    [/^核查：(.+)$/, function (m) { return 'Checked: ' + m[1]; }],
+    [/^原链接：(.+)$/, function (m) { return 'Original link: ' + m[1]; }],
+    [/^第 (\d+) 集$/, function (m) { return 'Episode ' + m[1]; }],
+    [/^— (.+)$/, function (m) { var a = D(m[1]); return a ? '— ' + a : null; }],
     [/^继续学习：(.+)$/, function (m) { return 'Continue learning: ' + (D(m[1]) || m[1]); }],
-    [/^(.+) \| 未尽 UNFINISHED$/, function (m) { var a = D(m[1]) || TITLES[m[1]]; return a ? a + ' | 未尽 UNFINISHED' : null; }]
+    [/^(.+) \| 未尽 UNFINISHED$/, function (m) { var x = m[1].replace(/ · 推荐教程$/, ''), a = D(x) || TITLES[x]; return a ? a + (x !== m[1] ? ' · Lesson resources' : '') + ' | 未尽 UNFINISHED' : null; }]
   ];
   var TITLES = { '主题学习': 'Topics', '信息面': 'Information', '技术面': 'Technical', '我的学习': 'My learning', '成果检测': 'Check your understanding', '学习路线': 'Learning paths', '读图图解': 'Chart walkthroughs' };
-  function tr(raw) {
-    var k = raw.replace(/\s+/g, ' ').trim(); if (!k || !CJK.test(k)) return null;
+  function one(k) {
     var out = D(k);
     if (out == null) for (var i = 0; i < P.length && out == null; i++) { var mm = k.match(P[i][0]); if (mm) out = P[i][1](mm); }
+    return out;
+  }
+  function fixDates(x) { return x.replace(/核查：/g, 'Checked: ').replace(/原链接：/g, 'Original link: ').replace(/。/g, '. ').replace(/\s+$/, ''); }
+  function tr(raw) {
+    var k = raw.replace(/\s+/g, ' ').trim(); if (!k || !CJK.test(k)) return null;
+    var out = one(k);
+    if (out == null) { // "中文 / English" pairs: keep the English side
+      var bi = k.lastIndexOf(' / ');
+      if (bi > 0) { var right = k.slice(bi + 3); if (!CJK.test(right.replace(/核查：|原链接：|。/g, ''))) out = fixDates(right); }
+    }
+    if (out == null && /[。]/.test(k)) { // several sentences: translate each, keep Latin ones
+      var parts = k.split(/(?<=。)\s*/).filter(Boolean), done = [];
+      for (var j = 0; j < parts.length; j++) {
+        var q = parts[j].trim(), r = CJK.test(q.replace(/。$/, '')) ? (one(q) || one(q.replace(/。$/, ''))) : fixDates(q);
+        if (r == null) { done = null; break; } done.push(r);
+      }
+      if (done) out = done.join(' ');
+    }
+    if (out == null && / · /.test(k)) { // "A · B" labels
+      var segs = k.split(' · '), got = segs.map(function (x) { return CJK.test(x) ? one(x) : x; });
+      if (got.every(function (x) { return x != null; })) out = got.join(' · ');
+    }
     if (out == null) return null;
     var lead = raw.match(/^\s*/)[0], tail = raw.match(/\s*$/)[0];
     return (lead ? ' ' : '') + out + (tail ? ' ' : '');
