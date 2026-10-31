@@ -3,15 +3,14 @@
  * question id, chosen option index, right/wrong, scope and a random per-browser id.
  * No names, accounts or free text. The publishable key below can only INSERT rows
  * and read per-question aggregates (row-level security); it cannot read or change records.
- * Readers can opt out; failures are silent and never affect the test. */
+ * Failures are silent and never affect the test. */
 (function () {
   'use strict';
   var URL_ = 'https://jnyenifjliwbvwwqzhys.supabase.co/rest/v1/quiz_answers';
   var KEY = 'sb_publishable_jv24Wk3RPap3rKCMlmvW8Q_UVFZ0l74';
-  var OPT = 'unfinished.stats.optout', SID = 'unfinished.stats.sid';
+  var SID = 'unfinished.stats.sid';
   function get(k) { try { return localStorage.getItem(k); } catch (e) { return null; } }
   function set(k, v) { try { if (v == null) localStorage.removeItem(k); else localStorage.setItem(k, v); } catch (e) {} }
-  function optedOut() { return get(OPT) === '1'; }
   function sid() {
     var s = get(SID);
     if (!s || !/^[a-z0-9-]{8,64}$/.test(s)) {
@@ -24,7 +23,7 @@
   function report() {
     var a;
     try { a = attempt; } catch (e) { return; } // `attempt` is the assessment page's current test
-    if (!a || !a.questions || !a.answers || sent.has(a) || optedOut()) return;
+    if (!a || !a.questions || !a.answers || sent.has(a)) return;
     if (a.answers.some(function (x) { return x === null; })) return; // not submitted yet
     var results = document.getElementById('test-results');
     if (!results || results.hidden) return;
@@ -37,25 +36,7 @@
       fetch(URL_, { method: 'POST', keepalive: true, headers: { apikey: KEY, 'content-type': 'application/json', prefer: 'return=minimal' }, body: JSON.stringify(rows) }).catch(function () {});
     } catch (e) {}
   }
-  function notice() {
-    var form = document.getElementById('test-form');
-    if (!form || document.getElementById('stats-optin')) return;
-    var p = document.createElement('p');
-    p.className = 'stats-notice';
-    p.style.cssText = 'margin:14px 0 0;font-size:13px;line-height:1.7;color:var(--n-muted,#a3a6b4)';
-    var label = document.createElement('label');
-    label.style.cssText = 'display:inline-flex;align-items:center;gap:8px;cursor:pointer';
-    var box = document.createElement('input');
-    box.type = 'checkbox'; box.id = 'stats-optin'; box.checked = !optedOut();
-    box.addEventListener('change', function () { set(OPT, box.checked ? null : '1'); });
-    label.appendChild(box);
-    label.appendChild(document.createTextNode('匿名参与题目难度统计'));
-    p.appendChild(label);
-    p.appendChild(document.createTextNode('：交卷时只记录题号、所选选项和对错，用来找出太难、太简单或有歧义的题；不记录姓名或账号。'));
-    form.appendChild(p);
-  }
   function init() {
-    notice();
     var submit = document.getElementById('test-submit');
     if (submit) submit.addEventListener('click', function () { setTimeout(report, 0); });
   }
