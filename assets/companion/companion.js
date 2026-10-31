@@ -20,7 +20,8 @@
     today: 'Today', session: 'This visit', streak: 'Streak', total: 'All time', min: ' min', hr: ' h', days: ' days',
     name: 'Yue Weiyang', role: 'studying with you', hide: 'Hide on this page', openSettings: 'Settings',
     meLabel: function (m) { return 'Yue Weiyang, study buddy. ' + m + ' min studied today. Open details.'; },
-    noData: 'No study time yet. It starts counting as you read.'
+    noData: 'No study time yet. It starts counting as you read.',
+    langTitle: 'Language', langHelp: 'Switches the site interface. In English, lessons open in their English written version; Chinese lessons stay as they are. Quiz questions are in Chinese for now.'
   } : {
     settings: '设置', settingsTitle: '网站设置', close: '关闭',
     compTitle: '学习陪伴', compToggle: '在课程页显示月未央',
@@ -29,7 +30,8 @@
     today: '今天', session: '本次', streak: '连续', total: '累计', min: ' 分钟', hr: ' 小时', days: ' 天',
     name: '月未央', role: '正在陪你学习', hide: '本页先藏起来', openSettings: '设置',
     meLabel: function (m) { return '月未央 学习陪伴，今天已学 ' + m + ' 分钟，点开查看'; },
-    noData: '还没有记录。开始阅读就会自动计时。'
+    noData: '还没有记录。开始阅读就会自动计时。',
+    langTitle: '界面语言', langHelp: '切换网站界面语言。选 English 后，课程会打开对应的英文文字教学；中文课程内容不受影响。测验题目暂时只有中文。'
   };
   // [mood, text]; {n} is filled in
   var L = EN ? {
@@ -107,8 +109,15 @@
       if (!clearArmed) { clearArmed = true; clearBtn.textContent = T.clearSure; setTimeout(function () { clearArmed = false; clearBtn.textContent = T.clear; }, 4000); return; }
       try { localStorage.removeItem(DKEY); } catch (e) {} sessionSec = 0; clearArmed = false; clearBtn.textContent = T.cleared; fillSettings(); refreshMe();
     } });
+    var cur = window.UNF_LANG || (EN ? 'en' : 'zh');
+    function langBtn(code, label) { return h('button', { type: 'button', class: 'ucp-segbtn', role: 'radio', lang: code === 'en' ? 'en' : 'zh-CN', 'aria-checked': String(cur === code), text: label, onclick: function () { switchLang(code); } }); }
     dlg = h('dialog', { class: 'ucp-dialog', 'aria-labelledby': 'ucp-dlg-title' }, [
       h('div', { class: 'ucp-dlg-head' }, [h('h2', { id: 'ucp-dlg-title', text: T.settingsTitle }), h('button', { type: 'button', class: 'ucp-x', 'aria-label': T.close, title: T.close, text: '×', onclick: function () { dlg.close(); } })]),
+      h('section', { class: 'ucp-sec ucp-lang' }, [
+        h('h3', { id: 'ucp-lang-title', text: T.langTitle }),
+        h('div', { class: 'ucp-seg', role: 'radiogroup', 'aria-labelledby': 'ucp-lang-title' }, [langBtn('zh', '中文'), langBtn('en', 'English')]),
+        h('p', { class: 'ucp-help', text: T.langHelp })
+      ]),
       h('section', { class: 'ucp-sec' }, [
         h('div', { class: 'ucp-sec-row' }, [h('img', { src: art('avatar'), alt: '', width: '48', height: '48', class: 'ucp-sec-av' }), h('div', null, [h('h3', { text: T.compTitle }), h('label', { class: 'ucp-switch', for: 'ucp-toggle' }, [toggle, h('span', { class: 'ucp-track', 'aria-hidden': 'true' }), h('span', { text: T.compToggle })])])]),
         h('p', { class: 'ucp-help', text: T.compHelp }), statsLine, clearBtn
@@ -116,6 +125,13 @@
     ]);
     dlg.addEventListener('click', function (e) { if (e.target === dlg) dlg.close(); });
     document.body.appendChild(dlg);
+  }
+  function switchLang(code) {
+    var cur = window.UNF_LANG || (EN ? 'en' : 'zh'); if (cur === code) return;
+    if (window.UNF_SET_LANG) window.UNF_SET_LANG(code); else { var s = settings(); s.lang = code; save(SKEY, s); }
+    var p = location.pathname;
+    if (/\/learn\/\d+-(zh|en)\.html$/.test(p)) location.href = location.href.replace(/-(zh|en)\.html/, '-' + code + '.html');
+    else location.reload();
   }
   function fillSettings() {
     toggle.checked = settings().companion;
