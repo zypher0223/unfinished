@@ -6,7 +6,7 @@ const state = {type:'all', difficulty:'all', language:'all', query:'', limit:16}
 const openIds=new Set();
 const $ = selector => document.querySelector(selector);
 
-const typeLabel = {indicator:'可计算指标',tool:'图表与数据',method:'技术分析方法'};
+const typeLabel = {indicator:'可计算指标',tool:'图表与数据',method:'技术分析方法',basics:'小白基础'};
 const esc = value => String(value ?? '').replace(/[&<>"']/g, char => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[char]));
 const lessonUrl = (id, lang='zh') => `learn/${id}-${lang}.html`;
 const difficultyTags = value => ['入门','中级','进阶'].filter(tag => value.includes(tag));
