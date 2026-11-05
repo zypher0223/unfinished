@@ -51,6 +51,12 @@
     ['technical', 'information'].forEach(function (k) { (d[k] || []).forEach(function (t) { var o = F[t.key]; if (o) for (var f in o) t[f] = o[f]; }); });
     return d;
   });
+  hook('MARKET_QUESTIONS', function (q) {
+    var miss = 0; (Array.isArray(q) ? q : []).forEach(function (x) {
+      if (x.stemEn) { x.stem = x.stemEn; x.options = x.optionsEn || x.options; x.explanation = x.explanationEn || x.explanation; x.optionExplanations = x.optionExplanationsEn || x.optionExplanations; } else miss++;
+    });
+    window.UNF_QZH = miss; return q;
+  });
   hook('STUDY_CATALOG', function (c) {
     var N = E().names; (Array.isArray(c) ? c : []).forEach(function (t) {
       if (N[t.key]) t.title = N[t.key];
@@ -141,7 +147,7 @@
   }
   function run() {
     var t = tr(document.title); if (t) document.title = t.trim();
-    if (/assessment\.html$/.test(path)) notice('Quiz questions are currently available in Chinese only.');
+    if (/assessment\.html$/.test(path) && window.UNF_QZH) notice('Some quiz questions are still available in Chinese only.');
     if (/figures\.html$/.test(path)) notice('These chart walkthroughs are currently in Chinese only. Each English lesson includes its own annotated chart.');
     walk(document.body); fixLinks();
     html.classList.remove('i18n-pending');
