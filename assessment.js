@@ -7,7 +7,7 @@ function shuffle(items){const a=[...items];for(let i=a.length-1;i>0;i--){const v
 function startTest(scope,level){
  let types=scope==='market'?['indicator','tool','method','information']:['indicator','tool','method'];
  let selected=['all','market'].includes(scope)?shuffle(types.flatMap(type=>shuffle(questionBank.filter(q=>q.type===type&&q.level===level)).slice(0,12/types.length))):shuffle(questionBank.filter(q=>q.type===scope&&q.level===level)).slice(0,12);
- if(selected.length<(scope==='career'?8:12)){document.querySelector('.test-history').textContent='题库暂未加载完整，请刷新后重试。';return;}
+ if(selected.length!==12){document.querySelector('.test-history').textContent='题库暂未加载完整，请刷新后重试。';return;}
  attempt={scope,level,index:0,questions:selected.map(q=>({...q,order:shuffle([0,1,2,3])})),answers:Array(selected.length).fill(null)};
  document.getElementById('test-setup').hidden=true;document.getElementById('test-results').hidden=true;document.getElementById('test-running').hidden=false;
  renderQuestion();document.getElementById('test-running').scrollIntoView({block:'start'});
