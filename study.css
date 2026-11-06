@@ -2,3 +2,6 @@
 .learning-entry{display:flex;flex-wrap:wrap;gap:12px 25px;border-block:1px solid #aaa;padding:18px 0;margin:22px 0;font:14px/1.7 var(--sans)}.learning-entry a{min-height:28px;text-underline-offset:4px}
 .case-chart-host{overflow-x:auto}.case-chart{min-width:680px}
 html{scroll-behavior:auto}
+.route-group{margin:2.2rem 0 .3rem;font-size:1.35rem;letter-spacing:.02em}
+.route-group:first-of-type{margin-top:1rem}
+.route-group-note{margin:0 0 1rem;opacity:.75}
