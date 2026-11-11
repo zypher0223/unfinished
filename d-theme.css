@@ -1,0 +1,126 @@
+/* 未尽 UNFINISHED · 方案 D（2026-11-10 用户选定）
+   阅读页：白底深字，顶部夜空深色导航；首页：夜空 + 按球面光照计算的真实月相。
+   build-folio.mjs 把本文件放在每页最后加载，覆盖 folio-theme.css 等浅色样式的颜色。 */
+:root{
+  --d-night:#05060A;--d-night-ink:#E9E6DD;--d-night-muted:#B5B3AC;--d-night-line:#23252D;--d-moon:#EFE3C4;
+  --d-ink:#1A1C22;--d-muted:#5B5F69;--d-line:#E3E4E8;--d-soft:#F3F4F6;--d-mark:#A9852F;
+  --paper:#FFFFFF;--folio-ground:#FFFFFF;--ink:var(--d-ink);--muted:var(--d-muted);--line:var(--d-line);
+  --folio-accent:#1A1C22;--folio-pale:#ECEDF0;
+}
+html{background:#FFFFFF}
+body,body.market-body,body.lesson-body,body.folio-catalog{background:#FFFFFF;color:var(--d-ink)}
+::selection{background:#E6DCC0;color:var(--d-ink)}
+:focus-visible{outline:2px solid var(--d-ink);outline-offset:3px}
+::-webkit-scrollbar-thumb{background:#C9CBD1;border-color:#FFFFFF}
+
+/* 顶部导航：所有页面统一用夜空深色条 */
+.folio-header,.lesson-header{background:var(--d-night);color:var(--d-night-ink);margin:0;padding:10px clamp(16px,5vw,72px);border:0;min-height:72px}
+.folio-header .folio-brand b{color:var(--d-night-ink);font-weight:700;font-size:28px}
+.folio-header nav a,.lesson-header a{color:var(--d-night-ink)}
+.folio-header nav a:hover,.lesson-header a:hover{color:#FFFFFF}
+.folio-header nav a[aria-current],.lesson-header nav a[aria-current]{color:#FFFFFF}
+.folio-header nav a[aria-current]:after{background:var(--d-moon);height:1px;bottom:-4px}
+.folio-header :focus-visible,.lesson-header :focus-visible,.d-home :focus-visible{outline-color:var(--d-moon)}
+.night-mark{color:#8D8B85;font-size:11px;letter-spacing:.16em}
+.folio-lesson-brand,.folio-lesson-brand small{color:var(--d-night-ink)!important}
+.folio-skip{background:var(--d-night);color:var(--d-night-ink)}
+
+/* 主按钮与选中状态：夜空黑 */
+.folio-open{background:var(--d-night);border-color:var(--d-night);color:var(--d-night-ink)}
+.folio-open:hover{background:#1F222B}
+.folio-topic:hover{background:var(--d-soft)}
+.folio-topic[aria-current=true] .folio-dot{background:var(--d-ink);border-color:var(--d-ink)}
+.folio-levels button[aria-pressed=true]{background:var(--d-ink);border-color:var(--d-ink);color:#FFFFFF}
+.folio-save[aria-pressed=true]{background:var(--d-soft)}
+.folio-save svg{stroke:var(--d-ink)}
+.folio-sheet-top>span{color:var(--d-ink)}
+.folio-sheet-top>span:after{background:var(--d-mark)}
+.folio-market-tabs a[aria-current]{border-bottom-color:var(--d-mark)}
+
+/* ===== 首页（夜空 + 真实月相） ===== */
+body.d-home{background:var(--d-night);color:var(--d-night-ink);min-height:100vh}
+body.d-home .folio-header{border-bottom:1px solid var(--d-night-line)}
+.d-stars{position:fixed;inset:0;z-index:0;pointer-events:none}
+.d-stars i{position:absolute;border-radius:50%;background:#FFFFFF}
+.d-hero{position:relative;z-index:1;display:flex;flex-wrap:wrap-reverse;align-items:center;gap:40px;padding:48px clamp(16px,5vw,72px) 40px;max-width:1440px;margin:0 auto}
+.d-hero-copy{flex:1 1 420px;min-width:0}
+.d-kicker{margin:0 0 18px;font:500 12px/1.6 var(--sans);letter-spacing:.32em;color:var(--d-night-muted)}
+.d-hero h1{margin:0;font:300 clamp(46px,6.6vw,96px)/1.25 var(--serif);letter-spacing:.01em}
+.d-sub{margin:22px 0 0;max-width:28em;font-size:18px;line-height:1.9;color:var(--d-night-muted)}
+.d-progress{margin:44px 0 0;font-size:15px;line-height:1.85;color:var(--d-night-ink)}
+.d-progress span{display:block;font-size:14px;color:var(--d-night-muted)}
+.d-moon-wrap{flex:1 1 380px;display:flex;justify-content:center;min-width:0}
+.d-moon{position:relative;width:min(560px,82vw);aspect-ratio:1;border-radius:50%;overflow:hidden;background:var(--d-night)}
+.d-moon img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;transform:scale(1.012);filter:brightness(1.28) contrast(1.06)}
+.d-moon canvas{position:absolute;inset:0;width:100%;height:100%;display:block}
+.d-doors{position:relative;z-index:1;max-width:1440px;margin:0 auto;padding:0 clamp(16px,5vw,72px) 16px}
+.d-door{display:flex;flex-wrap:wrap;align-items:baseline;gap:6px 48px;padding:24px 8px;border-top:1px solid var(--d-night-line);color:var(--d-night-ink);text-decoration:none;transition:background .25s}
+.d-door:last-child{border-bottom:1px solid var(--d-night-line)}
+.d-door:hover{background:#101219;color:#FFFFFF}
+.d-door h2{margin:0;font:500 clamp(36px,4.6vw,62px)/1.3 var(--serif)}
+.d-door p{flex:1 1 320px;margin:0;font-size:17px;line-height:1.8;color:var(--d-night-muted)}
+.d-foot{position:relative;z-index:1;max-width:1440px;margin:0 auto;padding:16px clamp(16px,5vw,72px) 32px;display:flex;flex-wrap:wrap;justify-content:space-between;gap:8px 32px;font-size:14px;line-height:1.8;color:var(--d-night-muted)}
+.d-foot a{color:var(--d-night-ink)}
+.d-credit{font-size:13px;color:#A3A199}
+@media (prefers-reduced-motion:reduce){.d-door{transition:none}}
+@media (max-width:760px){.night-mark{display:none}.d-hero{padding-top:28px;gap:24px}.d-moon{width:min(300px,78vw)}.d-progress{margin-top:28px}.d-door{padding:18px 4px}}
+
+/* ===== 我的学习：课程索引（夜空色块） ===== */
+.d-index{background:var(--d-night);color:var(--d-night-ink);padding:32px clamp(16px,4vw,48px) 28px;margin:0 0 36px}
+.d-index h2{margin:0 0 6px;font:300 32px/1.4 var(--serif);color:var(--d-night-ink)}
+.d-index>p{margin:0 0 20px;font-size:14px;line-height:1.8;color:var(--d-night-muted)}
+.d-index-grid{position:relative;display:grid;grid-template-columns:repeat(21,minmax(0,1fr));gap:7px;max-width:720px}
+.d-index-grid a{display:block;aspect-ratio:1;border-radius:50%;background:#2A2E3B;transition:transform .14s ease}
+.d-index-grid a.w3{background:#454B5E}
+.d-index-grid a.done{background:var(--d-moon)}
+.d-index-grid a.last{background:transparent;box-shadow:inset 0 0 0 2px var(--d-moon)}
+.d-index-grid a:hover,.d-index-grid a:focus-visible{transform:scale(1.35);outline:2px solid #FFFFFF;outline-offset:1px}
+.d-tip{position:absolute;z-index:5;pointer-events:none;width:max-content;max-width:min(320px,80vw);background:var(--d-moon);color:var(--d-ink);padding:8px 14px;font-size:15px;line-height:1.5}
+.d-tip small{display:block;font-size:13px;color:#40433F}
+.d-index-legend{display:flex;flex-wrap:wrap;gap:6px 24px;margin:16px 0 0;font-size:14px;color:var(--d-night-muted)}
+@media (max-width:760px){.d-index-grid{gap:4px}}
+@media (prefers-reduced-motion:reduce){.d-index-grid a{transition:none}}
+
+/* ===== 课程页：术语旁注（apply-glossary.mjs 生成） =====
+   宽屏放在正文右侧空白处，与段落顶端对齐；较窄时显示在段落下方。 */
+.term-ref{text-decoration:underline;text-decoration-color:var(--d-mark);text-decoration-thickness:2px;text-underline-offset:5px}
+.term-note{display:block;max-width:560px;margin:12px 0 8px;border-top:2px solid var(--d-mark);padding-top:10px;font:400 15px/1.8 var(--sans);color:#33363E}
+.term-note b{display:block;font-weight:500;color:var(--d-ink)}
+@media (min-width:1360px){.term-pair{position:relative}.term-note{position:absolute;top:0;left:calc(100% + 48px);width:220px;margin:24px 0 0}}
+
+/* ===== 阅读背景：书页（默认）/ 纯白 =====
+   i18n.js 在 <head> 里给 <html> 加 paper-book 或 paper-white；设置面板可切换。
+   书页：柔和纸色 + 极淡纸纹 + 墨褐文字；图表保持白底，像书里的插图版面。首页（.d-home）不受影响。 */
+html.paper-book{
+  --d-ink:#2B2721;--d-muted:#5F584D;--d-line:#DED4C0;--d-soft:#ECE4D3;--d-mark:#94702A;
+  --paper:#F4EEE2;--folio-ground:#F4EEE2;--ink:var(--d-ink);--muted:var(--d-muted);--line:var(--d-line);--folio-pale:#E8DFCC;--folio-accent:#2B2721;
+  background:#F4EEE2;
+}
+html.paper-book body:not(.d-home){
+  background-color:#F4EEE2;color:var(--d-ink);
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='220' height='220'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 .35 0 0 0 0 .28 0 0 0 0 .18 0 0 0 .05 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+html.paper-book ::selection{background:#E2D2AE}
+html.paper-book ::-webkit-scrollbar-thumb{background:#CFC3AA;border-color:#F4EEE2}
+html.paper-book .term-note{color:#433D34}
+html.paper-book .lesson-content,html.paper-book .folio-sheet,html.paper-book .study-page,html.paper-book .assessment-page{background:transparent}
+
+/* 问 AI、设置面板：原样式按夜空背景写成半透明，浅色页面上会发灰，这里改为实心深色 */
+.uai-glass,.uai-panel,.ucp-dialog,.ucp-bubble,.ucp-card,.ucp-badge{background:#0E1016!important;-webkit-backdrop-filter:none!important;backdrop-filter:none!important}
+
+/* ===== 目录页（方案 D 布局）：大标题、带数量的方向标签、分类标签行、选中行为夜空黑 ===== */
+.folio-browser h1{font:300 clamp(40px,4vw,56px)/1.25 var(--serif);margin:0 0 4px;letter-spacing:0}
+.folio-browser .folio-lede{font-size:15px;margin-bottom:18px}
+.folio-market-tabs{padding-left:0;gap:28px;border-bottom:1px solid var(--line)}
+.folio-market-tabs a{font-size:17px;padding:9px 0 11px}
+.folio-market-tabs a span,.folio-types button span+span{font:400 13px/1 var(--sans);color:var(--muted);margin-left:2px}
+.folio-types{display:flex;flex-wrap:wrap;gap:2px 18px;margin:0 0 16px}
+.folio-types button{border:0;border-bottom:2px solid transparent;background:none;padding:9px 0;min-height:40px;cursor:pointer;font:400 15px/1.5 var(--sans);color:var(--muted)}
+.folio-types button:hover{color:var(--ink)}
+.folio-types button[aria-pressed=true]{color:var(--ink);font-weight:500;border-bottom-color:var(--d-mark)}
+.folio-filters{grid-template-columns:minmax(0,1fr)}
+.folio-topic{padding:12px 10px}
+.folio-topic[aria-current=true],.folio-topic[aria-current=true]:hover{background:var(--d-night);color:var(--d-night-ink)}
+.folio-topic[aria-current=true] .folio-topic-name small,.folio-topic[aria-current=true] .folio-topic-meta{color:var(--d-night-muted)}
+.folio-topic[aria-current=true] .folio-dot{background:var(--d-moon);border-color:var(--d-moon)}
+.folio-topic[aria-current=true]:focus-visible{outline-color:var(--d-mark)}

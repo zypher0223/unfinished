@@ -16,6 +16,11 @@
   if (lang !== 'en' && lang !== 'zh') { var nl = (navigator.languages && navigator.languages[0]) || navigator.language || 'zh'; lang = /^zh/i.test(nl) ? 'zh' : 'en'; }
   window.UNF_LANG = lang;
   window.UNF_SET_LANG = setLang;
+  // 阅读背景（方案 D）：book = 书页（默认），white = 纯白。只影响白底阅读页，首页保持夜空。
+  function applyPaper(p) { var el = document.documentElement; el.classList.remove('paper-book', 'paper-white'); el.classList.add(p === 'white' ? 'paper-white' : 'paper-book'); }
+  applyPaper(settings().paper);
+  window.UNF_PAPER = settings().paper === 'white' ? 'white' : 'book';
+  window.UNF_SET_PAPER = function (p) { var s = settings(); s.paper = p === 'white' ? 'white' : 'book'; try { localStorage.setItem(SKEY, JSON.stringify(s)); } catch (e) {} window.UNF_PAPER = s.paper; applyPaper(s.paper); };
 
   var me = document.currentScript, src = me ? me.src : '';
   var ASSETS = src.replace(/i18n\/i18n\.js.*$/, ''), ROOT = ASSETS.replace(/assets\/$/, '');
@@ -91,6 +96,9 @@
     [/^原链接：(.+)$/, function (m) { return 'Original link: ' + m[1]; }],
     [/^第 (\d+) 集$/, function (m) { return 'Episode ' + m[1]; }],
     [/^— (.+)$/, function (m) { var a = D(m[1]); return a ? '— ' + a : null; }],
+    [/^你的月相：已学 (\d+) 课，共 (\d+) 课。$/, function (m) { return 'Your moon: ' + m[1] + ' of ' + m[2] + ' lessons read.'; }],
+    [/^(\d+) 项$/, function (m) { return m[1] + ' topics'; }],
+    [/^已读 (\d+) \/ (\d+)$/, function (m) { return 'Read ' + m[1] + ' / ' + m[2]; }],
     [/^继续学习：(.+)$/, function (m) { return 'Continue learning: ' + (D(m[1]) || m[1]); }],
     [/^(.+) \| 未尽 UNFINISHED$/, function (m) { var x = m[1].replace(/ · 推荐教程$/, ''), a = D(x) || TITLES[x]; return a ? a + (x !== m[1] ? ' · Lesson resources' : '') + ' | 未尽 UNFINISHED' : null; }]
   ];

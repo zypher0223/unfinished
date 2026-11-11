@@ -21,6 +21,7 @@
     name: 'Yue Weiyang', role: 'studying with you', hide: 'Hide on this page', openSettings: 'Settings',
     meLabel: function (m) { return 'Yue Weiyang, study buddy. ' + m + ' min studied today. Open details.'; },
     noData: 'No study time yet. It starts counting as you read.',
+    paperTitle: 'Reading background', paperBook: 'Book page', paperWhite: 'Plain white', paperHelp: 'Applies to lessons, catalogs, quizzes and other reading pages. Book page is a soft paper tone that is easier on the eyes over long sessions; the home page stays night-sky.',
     langTitle: 'Language', langHelp: 'Switches the site interface. In English, lessons open in their English written version; Chinese lessons stay as they are. Quiz questions are in Chinese for now.'
   } : {
     settings: '设置', settingsTitle: '网站设置', close: '关闭',
@@ -31,6 +32,7 @@
     name: '月未央', role: '正在陪你学习', hide: '本页先藏起来', openSettings: '设置',
     meLabel: function (m) { return '月未央 学习陪伴，今天已学 ' + m + ' 分钟，点开查看'; },
     noData: '还没有记录。开始阅读就会自动计时。',
+    paperTitle: '阅读背景', paperBook: '书页', paperWhite: '纯白', paperHelp: '用于课程、目录、测验等阅读页面。书页是柔和的纸张底色，长时间阅读更不刺眼；首页保持夜空。',
     langTitle: '界面语言', langHelp: '切换网站界面语言。选 English 后，课程会打开对应的英文文字教学；中文课程内容不受影响。测验题目暂时只有中文。'
   };
   // [mood, text]; {n} is filled in
@@ -111,12 +113,19 @@
     } });
     var cur = window.UNF_LANG || (EN ? 'en' : 'zh');
     function langBtn(code, label) { return h('button', { type: 'button', class: 'ucp-segbtn', role: 'radio', lang: code === 'en' ? 'en' : 'zh-CN', 'aria-checked': String(cur === code), text: label, onclick: function () { switchLang(code); } }); }
+    var paperNow = window.UNF_PAPER || 'book', paperBtns = [];
+    function paperBtn(code, label) { var b = h('button', { type: 'button', class: 'ucp-segbtn', role: 'radio', 'aria-checked': String(paperNow === code), text: label, onclick: function () { if (window.UNF_SET_PAPER) window.UNF_SET_PAPER(code); paperBtns.forEach(function (x) { x.setAttribute('aria-checked', String(x === b)); }); } }); paperBtns.push(b); return b; }
     dlg = h('dialog', { class: 'ucp-dialog', 'aria-labelledby': 'ucp-dlg-title' }, [
       h('div', { class: 'ucp-dlg-head' }, [h('h2', { id: 'ucp-dlg-title', text: T.settingsTitle }), h('button', { type: 'button', class: 'ucp-x', 'aria-label': T.close, title: T.close, text: '×', onclick: function () { dlg.close(); } })]),
       h('section', { class: 'ucp-sec ucp-lang' }, [
         h('h3', { id: 'ucp-lang-title', text: T.langTitle }),
         h('div', { class: 'ucp-seg', role: 'radiogroup', 'aria-labelledby': 'ucp-lang-title' }, [langBtn('zh', '中文'), langBtn('en', 'English')]),
         h('p', { class: 'ucp-help', text: T.langHelp })
+      ]),
+      h('section', { class: 'ucp-sec ucp-lang' }, [
+        h('h3', { id: 'ucp-paper-title', text: T.paperTitle }),
+        h('div', { class: 'ucp-seg', role: 'radiogroup', 'aria-labelledby': 'ucp-paper-title' }, [paperBtn('book', T.paperBook), paperBtn('white', T.paperWhite)]),
+        h('p', { class: 'ucp-help', text: T.paperHelp })
       ]),
       h('section', { class: 'ucp-sec' }, [
         h('div', { class: 'ucp-sec-row' }, [h('img', { src: art('avatar'), alt: '', width: '48', height: '48', class: 'ucp-sec-av' }), h('div', null, [h('h3', { text: T.compTitle }), h('label', { class: 'ucp-switch', for: 'ucp-toggle' }, [toggle, h('span', { class: 'ucp-track', 'aria-hidden': 'true' }), h('span', { text: T.compToggle })])])]),
