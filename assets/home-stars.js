@@ -146,4 +146,16 @@
   let rt = 0; addEventListener('resize', () => { clearTimeout(rt); rt = setTimeout(() => { if (map.clientWidth !== lastW) render(); }, 150); });
   addEventListener('learning-change', render);
   setTab('m');
+  // 市场星图：每隔一会儿随机挑 3–10 颗星闪一下，一批接一批交替
+  if (!matchMedia('(prefers-reduced-motion: reduce)').matches) {
+    let lit = [];
+    setInterval(() => {
+      lit.forEach(s => s.classList.remove('tw')); lit = [];
+      if (tab !== 'm' || document.hidden) return;
+      const stars = map.querySelectorAll('.s-star'); if (!stars.length) return;
+      const n = 3 + Math.floor(Math.random() * 8), picked = new Set();
+      while (picked.size < n) picked.add(Math.floor(Math.random() * stars.length));
+      picked.forEach(i => { stars[i].classList.add('tw'); lit.push(stars[i]); });
+    }, 1900);
+  }
 })();

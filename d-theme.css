@@ -158,6 +158,8 @@ html.paper-book .lesson-content,html.paper-book .folio-sheet,html.paper-book .st
 .s-links a{padding:10px 0;color:var(--d-night-ink);text-decoration:underline;text-underline-offset:4px}
 .s-links a:hover{color:#FFFFFF}
 .s-hint{margin:6px 0 0;font-size:14px;line-height:1.8;color:var(--d-night-muted)}
-@media (prefers-reduced-motion:reduce){.s-blk{animation:none}.s-star i{transition:none}}
+.s-star.tw i{animation:s-twinkle 1.7s ease-in-out}
+@keyframes s-twinkle{50%{transform:scale(2);background:#FFFFFF;box-shadow:0 0 10px rgba(255,255,255,.85)}}
+@media (prefers-reduced-motion:reduce){.s-blk,.s-star.tw i{animation:none}.s-star i{transition:none}}
 @media (max-width:760px){.s-tabs{gap:28px}.s-tab b{font-size:26px}}
 html[lang=en] .d-hero h1{white-space:normal;font-size:clamp(40px,5vw,72px)}
