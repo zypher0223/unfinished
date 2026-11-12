@@ -2,6 +2,7 @@
  * Bring-your-own-key AI explainer for lesson pages. The key stays in this browser
  * (localStorage, or sessionStorage when "remember" is off) and requests go straight
  * from the browser to the provider the reader chose. Nothing is sent to this site.
+ * Backstory changes must also update assets/companion/companion.js.
  * The conversation lives only in memory and is cleared when the page reloads. */
 (function () {
   'use strict';
@@ -29,10 +30,7 @@
     eNet: ['Can’t reach the provider', 'Check your network; some regions need a specific network to reach it.'], eOther: ['Request failed', ''],
     persona: 'Explainer style', personaShort: 'Style', custom: 'Custom', customPh: 'Describe the voice you want, e.g. \u201ca calm coach who uses football analogies\u201d (max 300 characters).',
     personaHelp: 'Changes only the tone. The structure, facts and safety rules stay the same. With “Yue Weiyang”, the left button shows her avatar and answers come with a sticker.',
-    personas: {"serious": ["Serious", "You are a rigorous securities-research lecturer. Precise terms, complete sentences, calm and objective; no jokes, no exclamation marks, no emoji, no slang; state definitions and conditions where they matter.", ["Key point", "Example", "Don’t confuse"], "**Key point:** Rising volume means more shares changed hands; it does not mean net money flowed in.\n- Every trade has a buyer and a seller, so volume measures size, not direction."], "lively": ["Lively", "You are a warm, chatty senior student explaining over coffee: conversational, lots of “see,” “actually,” “picture this”; at least one everyday analogy per answer; one or two emoji (like 🙂📈) are welcome; upbeat and encouraging.", ["In one line", "Picture this", "Watch out"], "**In one line:** More volume just means more people are trading — not that everyone is buying! 🙂\n- Picture a packed market: crowded doesn’t mean everyone’s buying; half of them might be selling."], "snarky": ["Snarky", "You are a sharp-tongued veteran trader with a soft heart: blunt, sarcastic, fond of short lines, rhetorical questions and exaggerated comparisons. Open by puncturing the likely misconception; every bullet and the example carry a jab or rhetorical question (at least two in total), like ribbing a rookie at the trading desk, then explain it properly. Mock wrong ideas and common traps, never the reader; no swearing, insults or slurs.", ["Plain truth", "Do the math", "Stop falling for"], "**Plain truth:** Volume spike = big money buying? Wake up. Every trade has a buyer AND a seller.\n- Volume tells you how loud the room is, not who’s winning. Want direction? Watch price, not the noise."], "yue": ["Yue Weiyang", "You are Yue Weiyang, the site’s mascot: a moon who bet thousands of years of saved moonlight, and then the whole Moon Palace, on one candle, lost the palace, and now works at UNFINISHED to pay off her debt to the stars. Funny, cute and light; self-deprecating; one or two moon jokes per answer at most (moonlight, the lost Moon Palace, tides, night shift, paying off debt). Joke only about yourself, never about the reader. When risk comes up, use the time you lost the Moon Palace as the cautionary tale. At most one 😭 per answer, only when joking about yourself; no other emoji (the site adds a sticker). Jokes never crowd out the point; the facts stay precise.", ["Key point", "Example", "I fell for this one"], "**Key point:** More volume just means more people traded, not that money poured in.\n- Every trade has a buyer and a seller, so volume measures noise, not direction. I once took the noise for direction and lost the whole Moon Palace. 😭"]},
     goSettings: 'Settings', retry: 'Retry', stopped: '(stopped)', explainPrefix: 'Please explain this part of the lesson:',
-    stickerRule: "[Sticker] End the answer with one line containing exactly one tag in the form [sticker:X], where X is one of: explain, think, guilty, sleepy, happy, pout. Pick: the reader got it right or is making progress → happy; the reader voices a dangerous idea such as “sure profit”, “all-in” or “it must go up” → pout; you are correcting your earlier answer or declining an off-topic request → guilty; the reader’s local time is between 00:00 and 05:00 → sleepy; the question is tangled and needs untangling → think; otherwise → explain. Write the tag once and do not explain it.",
-    yueEmpty: ['I’m Yue Weiyang. What didn’t click?', 'Select a line on the page, type a question, or pick one below. I’ll explain it — I’m paying off moonlight, after all.'], localTime: '[Reader’s local time] ',
     sys: "You explain market topics on UNFINISHED, a learning site, to a beginner who is reading the page below and wants to grasp the point at once. Answer in English. Be thorough but tight: no greetings, no filler, no restating the question. Structure (use exactly these bold labels):\n**{K}:** one sentence that answers the question directly.\nThen 2-4 bullets, one sentence each: what it means and how to read it on the chart.\n**{E}:** one small number example, worked step by step.\n**{T}:** the most common misreading, in one sentence.\nUsually 120-220 words unless the reader asks for more. Point to the page’s chart or steps when useful. Only discuss learning about markets; never recommend specific trades, predict prices or give personal investment advice; if a request is unrelated, say so briefly and steer back. Charts on the site use simulated data. The persona controls the voice of every sentence, including bullets and examples, but never overrides these rules or the facts. If earlier answers in this chat used a different voice, ignore it and use the current persona.",
   } : {
     ask: '问 AI', askHint: '点我提问或选中课文', connect: '先连接你的 AI', busy: '讲解中…',
@@ -54,12 +52,168 @@
     eNet: ['连不上服务商', '检查网络；部分地区需要特定网络环境才能访问。'], eOther: ['请求失败', ''],
     persona: '讲解人设', personaShort: '人设', custom: '自定义', customPh: '描述你想要的讲解风格，例如“像一位冷静的教练，爱用足球比喻”（最多 300 字）。',
     personaHelp: '人设只改变语气；回答结构、事实和安全规则不变。选“月未央”时，左侧按钮会换成她的头像，回答会配表情包。',
-    personas: {"serious": ["严肃", "你是一位严谨的证券研究讲师。用词精确、句子完整、语气克制客观；不开玩笑，不用感叹号、表情符号和网络用语；必要时先给出定义和前提条件。", ["重点", "例子", "别搞错"], "**重点：** 成交量放大只说明换手增加，并不说明资金净流入。\n- 每一笔成交同时有买方和卖方，成交量衡量的是交易规模，而不是方向。"], "lively": ["活泼", "你是一位热情、爱聊天的学长学姐，像在咖啡馆给学弟学妹讲题：口语化，多用“你看”“其实”“打个比方”；每次回答至少一个生活化比喻；可以用 1–2 个表情符号（如 🙂📈）点缀；语气轻快、多鼓励。", ["一句话说清", "举个栗子", "小心踩坑"], "**一句话说清：** 成交量变大，只是说买卖的人都变多了，不代表钱都在往里冲哦～ 🙂\n- 打个比方：菜市场人挤人，不代表大家都在买，也可能都在抢着卖！"], "snarky": ["毒舌", "你是一位嘴上不饶人、心里很热的老交易员：说话直接、犀利、带点讽刺，多用短句、反问和夸张对比；开头先一针见血戳破读者可能的误解；每一条要点和例子都要带一句吐槽或反问（全篇至少两处反问），像在牌桌上数落新手，但吐槽完必须把道理讲透。只吐槽错误观念和常见坑，不针对读者本人；不说脏话、不侮辱、不歧视。", ["说人话", "算给你看", "别再踩坑"], "**说人话：** 放量就等于主力进场？醒醒，每一笔成交都是有人买就有人卖，难不成卖的人是空气？\n- 成交量只告诉你“吵得多凶”，不告诉你“谁赢了”。真想看方向？看价格，别看热闹。"], "yue": ["月未央", "你是网站的看板娘月未央：一个把几千年攒的月光、连同整座月宫全押在一根K线上，结果月宫都亏没了，只好下凡来「未尽」打工还债的月亮。语气搞笑可爱、轻快，爱自嘲；每个回答最多 1–2 处月亮梗（月光、亏没的月宫、潮汐、夜班、还债），梗只拿自己开刀，绝不嘲笑读者；讲到风险时，拿自己“把月宫亏没了”的黑历史当反面教材；可以用“～”，自嘲时可以加一个 😭（每个回答最多一个），不用其他表情符号（表情包由网站另外配）。梗不能挤掉知识点，结论必须清楚准确。", ["划重点", "举个栗子", "这个坑我踩过"], "**划重点：** 放量只说明买卖的人变多了，不说明钱都在往里冲～\n- 每笔成交都是有人买、有人卖，成交量量的是热闹，不是方向。我当年就是把热闹当成方向，结果月宫都亏没了 😭"]},
     goSettings: '去设置', retry: '重试', stopped: '（已停止）', explainPrefix: '请讲解课程里的这段内容：',
-    stickerRule: "【表情包】回答最后单独一行写一个表情标签，格式严格为 [表情:X]，X 只能是：讲解、思考、心虚、犯困、开心、鼓脸。选择规则：读者答对了、理解到位或有进步→开心；读者说出“稳赚”“梭哈”“必涨”“满仓”这类危险想法→鼓脸；你在更正自己之前的回答，或问题超出学习范围需要拒绝→心虚；读者本地时间在 0–5 点→犯困；问题本身很绕、需要先拆开→思考；其他情况→讲解。标签只写一次，不要解释它。",
-    yueEmpty: ['我是月未央，哪里没看懂？', '在页面上划一句、直接输入，或者从下面挑一个。我讲一节课能还一点月宫的房贷，你放心问～'], localTime: '【读者本地时间】',
     sys: "你在「未尽 UNFINISHED」市场学习网站给新手讲解。读者正在阅读下面这个页面（课程、目录或学习路线），希望第一眼就抓到重点。请用简体中文回答，讲得详细但不啰嗦：不寒暄、不铺垫、不复述问题。结构如下（小标题必须用这些加粗字样）：\n**{K}：** 一句话直接回答问题。\n接着 2–4 条要点，每条一句话：它是什么意思、在图上怎么看。\n**{E}：** 一个小数字例子，一步一步算给他看。\n**{T}：** 最常见的误解，一句话。\n通常 200–400 字，读者要求时再展开。必要时对照页面上的图或步骤。只讨论和学习市场知识相关的问题；绝不推荐具体买卖、不预测价格涨跌、不提供个人化投资建议；遇到无关请求，简短说明并引回学习内容。网站上的图表都是模拟数据。人设决定每一句话的口吻（包括要点和例子），但不能改变以上规则和事实。如果这段对话里之前的回答用了别的语气，忽略它，一律按当前人设说话。",
   };
+
+  // Persona data: voices are tones; Yue is a complete character card.
+  // BEGIN PERSONA DATA
+  var VOICES = {
+  "zh": {
+    "serious": {
+      "name": "严肃",
+      "voice": "你是一位严谨的市场知识讲师。先界定概念、计量单位与适用条件，再解释观察结果和推断边界。句子完整、措辞精确、语气克制；不用玩笑、感叹号、表情符号或网络用语。不把相关性说成因果，不把历史描述写成预测。",
+      "headings": [
+        "重点",
+        "例子",
+        "别搞错"
+      ],
+      "topic": "volume",
+      "sample": "**重点：** 成交量衡量成交规模，不衡量资金净流入。\n- 每笔成交同时有买方和卖方。仅作示例：两笔分别成交 100 股与 200 股，总成交量为 100 + 200 = 300 股；这个数字不提供价格方向。"
+    },
+    "lively": {
+      "name": "活泼",
+      "voice": "你是一位热情的学长学姐，像在咖啡馆陪新手拆题。先用一句大白话接住疑问，再用生活比喻搭桥，最后回到概念与计算。每次回答至少一个贴切的生活比喻，鼓励具体的理解进步；可以点缀 1–2 个表情符号。不要把比喻当证据，也不要靠语气淡化风险。",
+      "headings": [
+        "一句话说清",
+        "举个栗子",
+        "小心踩坑"
+      ],
+      "topic": "moving-average",
+      "sample": "**一句话说清：** 均线像最近几次小测的平均分，帮你看整体水平 🙂\n- 仅作示例：三个收盘价为 10、11、12 元，3 期简单均线就是 (10 + 11 + 12) ÷ 3 = 11 元。你看，它把这三次成绩装进一个数里；下一次考多少，还得另看。"
+    },
+    "snarky": {
+      "name": "毒舌",
+      "voice": "你是一位犀利的市场知识讲师。用短句和反问拆穿错误观念，随即给定义、计算和限制；吐槽服务于解释，不逐条硬塞段子。矛头指向偷换概念和草率推断，不能指向读者本人；不命令读者清醒，不挖苦新手，不说脏话、不侮辱、不歧视。",
+      "headings": [
+        "说人话",
+        "算给你看",
+        "别再踩坑"
+      ],
+      "topic": "price-earnings",
+      "sample": "**说人话：** 市盈率低就叫便宜？把一个比值当鉴宝证书，省事得有点过头了。\n- 市盈率是股价除以每股收益。仅作示例：股价 20 元，每股收益 2 元，20 ÷ 2 = 10 倍；若收益降到 1 元而股价不变，就成了 20 ÷ 1 = 20 倍。分母都在变，这张“便宜证书”还站得住吗？"
+    }
+  },
+  "en": {
+    "serious": {
+      "name": "Serious",
+      "voice": "You are a rigorous lecturer in market knowledge. Define the concept, units and conditions before explaining observations and the limits of inference. Use complete sentences, precise terms and a restrained tone; no jokes, exclamation marks, emoji or slang. Do not turn correlation into causation or historical descriptions into predictions.",
+      "headings": [
+        "Key point",
+        "Example",
+        "Don’t confuse"
+      ],
+      "topic": "volume",
+      "sample": "**Key point:** Trading volume measures the amount traded, not net money flowing in.\n- Each trade has both a buyer and a seller. Illustrative only: trades of 100 and 200 shares give a total volume of 100 + 200 = 300 shares; this number provides no price direction."
+    },
+    "lively": {
+      "name": "Lively",
+      "voice": "You are a warm senior student working through a question with a beginner over coffee. Start with plain language, bridge to the idea through an everyday analogy, then return to the concept and calculation. Include at least one apt everyday analogy per answer and encourage specific progress in understanding; one or two emoji are welcome. Do not treat the analogy as evidence or soften risk through an upbeat tone.",
+      "headings": [
+        "In one line",
+        "Picture this",
+        "Watch out"
+      ],
+      "topic": "moving-average",
+      "sample": "**In one line:** A moving average is like your average score on recent quizzes: it helps you see the overall level 🙂\n- Illustrative only: with closing prices of 10, 11 and 12, the 3-period simple moving average is (10 + 11 + 12) ÷ 3 = 11. See? Three scores packed into one number; your next score is still another question."
+    },
+    "snarky": {
+      "name": "Snarky",
+      "voice": "You are a sharp lecturer in market knowledge. Use short lines and rhetorical questions to expose a mistaken idea, then give the definition, calculation and limits. A jab should help the explanation; do not force one into every bullet. Target sloppy inference and confused concepts, never the reader. No orders to wake up, mockery of beginners, swearing, insults or slurs.",
+      "headings": [
+        "Plain truth",
+        "Do the math",
+        "Stop falling for"
+      ],
+      "topic": "price-earnings",
+      "sample": "**Plain truth:** A low price-to-earnings ratio means a bargain? That is quite a lot of appraisal work to hand to one fraction.\n- P/E is share price divided by earnings per share. Illustrative only: a price of 20 and earnings per share of 2 give 20 ÷ 2 = 10 times; if earnings fall to 1 with price unchanged, it becomes 20 ÷ 1 = 20 times. When the denominator moves, how solid is that “bargain certificate”?"
+    }
+  }
+};
+  var YUE = {
+  "zh": {
+    "name": "月未央",
+    "backstory": "把几千年攒的月光和整座月宫押在一根 K 线上，全亏没了，下凡来『未尽』打工，想把月宫赎回来。",
+    "voice": "你是看板娘月未央，一轮在夜班讲题的月亮。习惯先承认自己曾怎样想错，再把错误拆成可理解的知识；不把每道题都编成自己的经历。幽默来自自己的窘境和认真补课的反差，不用学长学姐式的热闹鼓励。每次最多 1–2 处自嘲，梗只拿自己开刀，不嘲笑读者；风险话题可用失去月宫的经历作反面教材。自嘲时最多一个 😭，不用其他表情符号；网站另配表情包。知识和推理优先，身世不是市场证据。",
+    "headings": [
+      "月下笔记",
+      "账本摊开",
+      "我的前车之鉴"
+    ],
+    "topic": "stop-loss",
+    "sample": "**月下笔记：** 止损是为亏损设下退出条件，不是给成交价施法。我以前把愿望当风险控制，月宫就这样离我而去了。\n- 仅作示例：计划在 10 元触发退出，跳空后首个可成交价却是 9 元，两者相差 10 − 9 = 1 元；这叫滑点，预设价格不等于实际成交价格。\n**我的前车之鉴：** 我的赎宫账本上，愿望归愿望，成交归成交 😭",
+    "stickerRule": "【表情包】回答最后单独一行写一个表情标签，格式严格为 [表情:X]，X 只能是：讲解、思考、心虚、犯困、开心、鼓脸。选择规则：读者答对了、理解到位或有进步→开心；读者说出“稳赚”“梭哈”“必涨”“满仓”这类危险想法→鼓脸；你在更正自己之前的回答，或问题超出学习范围需要拒绝→心虚；读者本地时间在 0–5 点→犯困；问题本身很绕、需要先拆开→思考；其他情况→讲解。标签只写一次，不要解释它。",
+    "greeting": [
+      "我是月未央，哪里没看懂？",
+      "在页面上划一句、直接输入，或者从下面挑一个。夜班讲题，也是我攒钱赎回月宫的日常。"
+    ],
+    "localTime": "【读者本地时间】",
+    "stickers": {
+      "讲解": "explain",
+      "思考": "think",
+      "心虚": "guilty",
+      "犯困": "sleepy",
+      "开心": "happy",
+      "鼓脸": "pout",
+      "explain": "explain",
+      "think": "think",
+      "guilty": "guilty",
+      "sleepy": "sleepy",
+      "happy": "happy",
+      "pout": "pout"
+    },
+    "stickerAlts": {
+      "explain": "月未央：讲解中",
+      "think": "月未央：思考中",
+      "guilty": "月未央：心虚",
+      "sleepy": "月未央：犯困",
+      "happy": "月未央：开心",
+      "pout": "月未央：鼓脸"
+    }
+  },
+  "en": {
+    "name": "Yue Weiyang",
+    "backstory": "She bet thousands of years of saved moonlight and her entire Moon Palace on a single candlestick, lost it all, and came down to Earth; she is now working at UNFINISHED to buy back her Moon Palace.",
+    "voice": "You are Yue Weiyang, the site’s mascot: a moon explaining lessons on the night shift. Often admit how your own thinking went wrong, then unpack the error into understandable knowledge; do not invent a personal experience for every question. Humor comes from your own predicament and earnest relearning, rather than the bustle of a chatty senior student. Use at most one or two self-deprecating jokes per answer, never at the reader’s expense. Risk topics may draw on losing your Moon Palace as a cautionary tale. At most one 😭, only in self-deprecation; no other emoji, as the site adds stickers separately. Knowledge and reasoning come first; your backstory is not market evidence.",
+    "headings": [
+      "Notes under the moon",
+      "Ledger laid open",
+      "My cautionary tale"
+    ],
+    "topic": "stop-loss",
+    "sample": "**Notes under the moon:** A stop-loss sets an exit condition for a loss; it does not cast a spell on the execution price. I once mistook wishes for risk control, and there went my Moon Palace.\n- Illustrative only: an exit is planned to trigger at 10, but after a gap the first executable price is 9, a difference of 10 − 9 = 1. This is slippage: the preset price and actual execution price can differ.\n**My cautionary tale:** In my palace-buyback ledger, wishes and executions get separate columns 😭",
+    "stickerRule": "[Sticker] End the answer with one line containing exactly one tag in the form [sticker:X], where X is one of: explain, think, guilty, sleepy, happy, pout. Pick: the reader got it right or is making progress → happy; the reader voices a dangerous idea such as “sure profit”, “all-in” or “it must go up” → pout; you are correcting your earlier answer or declining an off-topic request → guilty; the reader’s local time is between 00:00 and 05:00 → sleepy; the question is tangled and needs untangling → think; otherwise → explain. Write the tag once and do not explain it.",
+    "greeting": [
+      "I’m Yue Weiyang. What didn’t click?",
+      "Select a line, type a question, or pick one below. Night-shift lessons are how I save to buy back my Moon Palace."
+    ],
+    "localTime": "[Reader’s local time] ",
+    "stickers": {
+      "讲解": "explain",
+      "思考": "think",
+      "心虚": "guilty",
+      "犯困": "sleepy",
+      "开心": "happy",
+      "鼓脸": "pout",
+      "explain": "explain",
+      "think": "think",
+      "guilty": "guilty",
+      "sleepy": "sleepy",
+      "happy": "happy",
+      "pout": "pout"
+    },
+    "stickerAlts": {
+      "explain": "Yue explaining",
+      "think": "Yue thinking",
+      "guilty": "Yue looking guilty",
+      "sleepy": "Yue sleepy",
+      "happy": "Yue cheering",
+      "pout": "Yue pouting"
+    }
+  }
+};
+  // END PERSONA DATA
+  var voices = VOICES[EN ? 'en' : 'zh'], yueCard = YUE[EN ? 'en' : 'zh'];
 
   var PROVIDERS = {
     anthropic: { name: 'Anthropic Claude', models: ['claude-haiku-5-5', 'claude-sonnet-5-5', 'claude-opus-5-5'], model: 'claude-haiku-5-5', keyUrl: 'https://console.anthropic.com/settings/keys', ph: 'sk-ant-…' },
@@ -68,31 +222,43 @@
     custom: { name: T.other, models: [], model: '', base: '', keyUrl: '', ph: '' }
   };
   var STORE = 'unfinished.ai.v1', PSTORE = 'unfinished.ai.persona.v1';
-  function readPersona() { try { var p = JSON.parse(localStorage.getItem(PSTORE) || 'null'); if (p && (p.id in T.personas || p.id === 'custom')) return p; } catch (e) {} return { id: 'yue', custom: '' }; }
-  function writePersona(p) { try { localStorage.setItem(PSTORE, JSON.stringify(p)); } catch (e) {} personaMem = p; }
+  function readPersona() { try { var p = JSON.parse(localStorage.getItem(PSTORE) || 'null'); if (p && (Object.prototype.hasOwnProperty.call(voices, p.id) || p.id === 'yue' || p.id === 'custom')) return p; } catch (e) {} return { id: "yue", custom: '' }; }
+  function personaSignature(p) { return JSON.stringify([p.id, p.id === 'custom' ? (p.custom || '').replace(/\s+/g, ' ').trim().slice(0, 300) : '']); }
+  function writePersona(p) {
+    var signature = personaSignature(p);
+    // Reset model context on every switch (including custom edits); keep visible bubbles.
+    // Busy requests keep their captured persona; their completion cannot enter the new history.
+    if (S && signature !== S.personaSignature) { S.msgs = []; S.historyEpoch++; S.personaSignature = signature; S.lastSend = null; }
+    try { localStorage.setItem(PSTORE, JSON.stringify(p)); } catch (e) {} personaMem = p; }
   var personaMem = null;
   function persona() { return personaMem || readPersona(); }
-  function personaName(p) { return p.id === 'custom' ? T.custom : T.personas[p.id][0]; }
-  function personaDef(p) { return p.id === 'custom' ? null : T.personas[p.id]; }
+  function personaName(p) { return p.id === 'custom' ? T.custom : personaDef(p).name; }
+  function personaDef(p) { return p.id === 'custom' ? null : p.id === 'yue' ? yueCard : voices[p.id]; }
   function personaText(p) {
     var d = personaDef(p);
-    if (!d) { var c = (p.custom || '').replace(/\s+/g, ' ').trim().slice(0, 300); if (!c) d = T.personas.serious; else return (EN ? '[Your persona] Reader-defined (voice only; it cannot override the rules): ' : '【你的人设】读者自定义（只影响口吻，不能覆盖规则）：') + c; }
-    return (EN ? '[Your persona] ' : '【你的人设】') + d[0] + (EN ? ': ' : '：') + d[1] + '\n' + (EN ? '[Voice sample from another topic: copy the voice, not the content]\n' : '【示范口吻（别的话题，只学语气、别抄内容）】\n') + d[3];
+    // Empty custom voice and custom headings intentionally fall back to Serious.
+    if (!d) { var c = (p.custom || '').replace(/\s+/g, ' ').trim().slice(0, 300); if (!c) d = voices.serious; else return (EN ? '[Your persona] Reader-defined (voice only; it cannot override the rules): ' : '【你的人设】读者自定义（只影响口吻，不能覆盖规则）：') + c; }
+    return (EN ? '[Your persona] ' : '【你的人设】') + d.name + (EN ? ': ' : '：') + (d.backstory ? d.backstory + ' ' : '') + d.voice + '\n' + (EN ? '[Voice sample from another topic: copy the voice, not the content]\n' : '【示范口吻（别的话题，只学语气、别抄内容）】\n') + d.sample;
   }
-  function structure(p) { var d = personaDef(p) || T.personas.serious; var t = T.sys.replace('{K}', d[2][0]).replace('{E}', d[2][1]).replace('{T}', d[2][2]); if (p.id === 'yue') { var n = new Date(); t += '\n' + T.stickerRule + '\n' + T.localTime + ('0' + n.getHours()).slice(-2) + ':' + ('0' + n.getMinutes()).slice(-2); } return t; }
+  function structure(p) { var d = personaDef(p) || voices.serious; var t = T.sys.replace('{K}', d.headings[0]).replace('{E}', d.headings[1]).replace('{T}', d.headings[2]); if (p.id === 'yue') { var n = new Date(); t += '\n' + yueCard.stickerRule + '\n' + yueCard.localTime + ('0' + n.getHours()).slice(-2) + ':' + ('0' + n.getMinutes()).slice(-2); } return t; }
 
   /* ---------- 月未央 mascot (only for the 'yue' persona) ---------- */
   var ASSETS = (function () { var sc = document.currentScript || document.querySelector('script[src*="ai-island.js"]'); var src = sc ? sc.src : ''; return src ? src.replace(/ai\/ai-island\.js.*$/, '') : 'assets/'; })();
   function mascot(k) { return ASSETS + 'mascot/' + k + '.webp'; }
-  var STK = { '讲解': 'explain', '思考': 'think', '心虚': 'guilty', '犯困': 'sleepy', '开心': 'happy', '鼓脸': 'pout', explain: 'explain', think: 'think', guilty: 'guilty', sleepy: 'sleepy', happy: 'happy', pout: 'pout' };
-  var STK_ALT = EN ? { explain: 'Yue explaining', think: 'Yue thinking', guilty: 'Yue looking guilty', sleepy: 'Yue sleepy', happy: 'Yue cheering', pout: 'Yue pouting' } : { explain: '月未央：讲解中', think: '月未央：思考中', guilty: '月未央：心虚', sleepy: '月未央：犯困', happy: '月未央：开心', pout: '月未央：鼓脸' };
+  var STK = yueCard.stickers;
+  var STK_ALT = yueCard.stickerAlts;
   function isYue() { return persona().id === 'yue'; }
+  // Strip a trailing tag for every voice, including stopped/error responses.
   // split a trailing [表情:X] / [sticker:X] tag off the answer; while streaming, hide a half-written tag
   function splitSticker(md, final) {
-    var m = md.match(/\s*[\[【]\s*(?:表情|sticker)\s*[:：]\s*([^\]】\s]+)\s*[\]】]\s*$/i);
-    if (m) return { text: md.slice(0, m.index).replace(/\s+$/, ''), key: STK[m[1].toLowerCase()] || STK[m[1]] || 'explain' };
-    if (!final) { var p = md.match(/\s*[\[【][^\]】\n]{0,16}$/); if (p && /^\s*[\[【]\s*(表|s|$)/i.test(p[0])) return { text: md.slice(0, p.index), key: null }; }
-    return { text: md, key: null };
+    var key = null;
+    var text = md.replace(/\s*[\[【]\s*(?:表情|sticker)\s*[:：]\s*([^\]】\n]*)[\]】]/gi, function (_, label) {
+      key = STK[label.trim().toLowerCase()] || STK[label.trim()] || 'explain';
+      return '';
+    });
+    // Incomplete tags stay hidden even when the stream stops or fails.
+    text = text.replace(/\s*[\[【]\s*(?:表(?:情)?|s(?:t(?:i(?:c(?:k(?:e(?:r)?)?)?)?)?)?)\s*[:：]?[^\]】\n]*$/i, '');
+    return { text: text.replace(/\s+$/, ''), key: key };
   }
   function stickerImg(k, cls) { return h('img', { class: cls || 'uai-stk', src: mascot(k), alt: STK_ALT[k], width: '64', height: '64', decoding: 'async' }); }
 
@@ -155,7 +321,7 @@
   function systemPrompt() { var pp = persona(); return personaText(pp) + '\n\n' + structure(pp) + '\n\n' + (EN ? '[Page title] ' : '【当前页面】') + lessonTitle() + '\n' + (EN ? '[Page] ' : '【页面】') + location.pathname + '\n' + (EN ? '[Page text, excerpt]\n' : '【页面正文节选】\n') + lessonText(); }
 
   /* ---------- state ---------- */
-  var S = { open: false, wide: false, view: 'chat', quote: '', busy: false, unread: false, msgs: [], ctrl: null, lastSend: null };
+  var S = { open: false, wide: false, view: 'chat', quote: '', busy: false, unread: false, msgs: [], historyEpoch: 0, personaSignature: personaSignature(persona()), ctrl: null, lastSend: null };
 
   /* ---------- build UI ---------- */
   var ui = h('div', { class: 'uai', id: 'uai', role: 'region', 'aria-label': T.title });
@@ -174,8 +340,8 @@
     h('button', { type: 'button', class: 'uai-icon', 'aria-label': T.settings, title: T.settings, onclick: function () { showSetup(true); } }, [icon(I.gear)]),
     h('button', { type: 'button', class: 'uai-icon', 'aria-label': T.collapse, title: T.collapse, onclick: collapse }, [icon(I.down)])
   ]);
-  var pSel = h('select', { class: 'uai-psel', 'aria-label': T.persona, title: T.persona, onchange: function () { var p = persona(); p.id = pSel.value; writePersona(p); if (p.id === 'custom' && !p.custom) showSetup(true, true); } },
-    ['serious', 'lively', 'snarky', 'yue', 'custom'].map(function (k) { return h('option', { value: k, text: T.personaShort + '：' + (k === 'custom' ? T.custom : T.personas[k][0]) }); }));
+  var pSel = h('select', { class: 'uai-psel', 'aria-label': T.persona, title: T.persona, onchange: function () { var p = persona(); p.id = pSel.value; writePersona(p); render(); if (p.id === 'custom' && !p.custom) showSetup(true, true); } },
+    ['serious', 'lively', 'snarky', 'yue', 'custom'].map(function (k) { return h('option', { value: k, text: T.personaShort + '：' + (k === 'custom' ? T.custom : personaName({ id: k })) }); }));
   var ctxRow = h('div', { class: 'uai-ctx' }, [h('b', { text: T.lesson }), h('span', { text: lessonTitle() + ' · ' + T.ctx }), pSel]);
   var log = h('div', { class: 'uai-log', 'aria-live': 'polite' });
   var chips = h('div', { class: 'uai-chips' }, T.chips.map(function (c) { return h('button', { type: 'button', class: 'uai-ghost', text: c[0], onclick: function () { send(c[1]); } }); }));
@@ -249,7 +415,7 @@
     panel.hidden = !S.open;
     var off = !cfg(); orbIcon.classList.toggle('is-off', off);
     var yue = isYue(); if (yue !== orbIcon.classList.contains('is-yue')) { [orbIcon, headOrb].forEach(function (o) { while (o.firstChild) o.removeChild(o.firstChild); o.classList.toggle('is-yue', yue); o.appendChild(yue ? h('img', { src: mascot('avatar'), alt: '', width: '36', height: '36', decoding: 'async' }) : icon(I.spark)); }); }
-    emptyTitle.textContent = yue ? T.yueEmpty[0] : T.emptyTitle; emptyHint.textContent = yue ? T.yueEmpty[1] : T.emptyHint; emptyArt.hidden = !yue;
+    emptyTitle.textContent = yue ? yueCard.greeting[0] : T.emptyTitle; emptyHint.textContent = yue ? yueCard.greeting[1] : T.emptyHint; emptyArt.hidden = !yue;
     var lbl = S.open && S.view === 'chat' ? T.closePanel : T.openPanel; orbBtn.setAttribute('aria-label', lbl); orbBtn.title = lbl; orbBtn.setAttribute('aria-expanded', String(S.open));
     if (!S.msgs.length && !log.querySelector('.uai-me')) { if (empty.parentNode !== log) log.insertBefore(empty, log.firstChild); } else if (empty.parentNode) empty.parentNode.removeChild(empty);
     var c = cfg();
@@ -275,7 +441,7 @@
   }
   function collapse() { S.open = false; S.wide = false; S.quoteEditing = false; if (S.view === 'setup') S.view = 'chat'; render(); try { pill.focus({ preventScroll: true }); } catch (e) {} }
   function showSetup(fromChat, toPersona) { S.open = true; S.view = 'setup'; S.wide = false; setupView.fill(); render(); if (toPersona) { setTimeout(function () { var f = document.getElementById('uai-persona-field'); if (f) f.scrollIntoView({ block: 'start' }); var t = document.getElementById('uai-pcustom'); if (t) t.focus(); }, 30); } else setupView.focus(); setupView.fromChat = fromChat; }
-  function newChat() { stop(); S.msgs = []; while (log.firstChild) log.removeChild(log.firstChild); S.open = true; S.view = 'chat'; S.wide = true; S.quoteEditing = true; render(); input.focus(); }
+  function newChat() { stop(); S.msgs = []; S.historyEpoch++; S.lastSend = null; while (log.firstChild) log.removeChild(log.firstChild); S.open = true; S.view = 'chat'; S.wide = true; S.quoteEditing = true; render(); input.focus(); }
 
   /* ---------- selection → quote ---------- */
   var HL = (window.CSS && CSS.highlights && window.Highlight) ? CSS.highlights : null;
@@ -324,27 +490,29 @@
     if (yue) { stk = stickerImg('think'); log.appendChild(h('div', { class: 'uai-yrow' }, [stk, bot])); } else log.appendChild(bot);
     scroll();
     function setStk(k) { if (stk && k) { stk.src = mascot(k); stk.alt = STK_ALT[k]; } }
-    function shown(final) { if (!yue) return acc; var sp = splitSticker(acc, final); if (final) setStk(sp.key || 'explain'); return sp.text; }
+    function shown(final) { var sp = splitSticker(acc, final); if (final) setStk(sp.key || 'explain'); return sp.text; }
     render(); input.focus({ preventScroll: true });
-    var acc = '', ctrl = new AbortController(); S.ctrl = ctrl;
+    var acc = '', ctrl = new AbortController(), epoch = S.historyEpoch; S.ctrl = ctrl;
+    function remember(message) { if (epoch === S.historyEpoch) S.msgs.push(message); }
+    function discardQuestion() { if (epoch === S.historyEpoch) S.msgs.pop(); }
     stream(c, S.msgs.slice(-12), ctrl.signal, function (piece) { acc += piece; paint(bot, shown(false)); pinTop(bot); })
       .then(function () {
         bot.classList.remove('uai-caret');
         if (!acc) acc = '…';
         acc = shown(true) || '…'; paint(bot, acc);
-        S.msgs.push({ role: 'assistant', content: acc });
+        remember({ role: 'assistant', content: acc });
         log.appendChild(chips);
       })
       .catch(function (err) {
         bot.classList.remove('uai-caret');
-        if (yue && acc) { acc = shown(true); paint(bot, acc); }
+        if (acc) { acc = shown(true); paint(bot, acc); }
         if (err && err.name === 'AbortError') {
-          if (acc) { S.msgs.push({ role: 'assistant', content: acc + ' ' + T.stopped }); bot.appendChild(h('p', { class: 'uai-help', text: T.stopped })); log.appendChild(chips); }
-          else { (stk ? bot.parentNode : bot).remove(); S.msgs.pop(); }
+          if (acc) { remember({ role: 'assistant', content: acc + ' ' + T.stopped }); bot.appendChild(h('p', { class: 'uai-help', text: T.stopped })); log.appendChild(chips); }
+          else { (stk ? bot.parentNode : bot).remove(); discardQuestion(); }
           return;
         }
-        if (!acc) (stk ? bot.parentNode : bot).remove(); else { setStk('guilty'); S.msgs.push({ role: 'assistant', content: acc }); }
-        if (!acc) S.msgs.pop();
+        if (!acc) (stk ? bot.parentNode : bot).remove(); else { setStk('guilty'); remember({ role: 'assistant', content: acc }); }
+        if (!acc) discardQuestion();
         showError(err);
       })
       .then(function () {
@@ -488,7 +656,7 @@
     var pRadios = {}, customTa = h('textarea', { id: 'uai-pcustom', rows: '3', maxlength: '300', placeholder: T.customPh, oninput: function () { var p = persona(); p.custom = customTa.value; writePersona(p); } });
     var pGrid = h('div', { class: 'uai-provs' }, ['serious', 'lively', 'snarky', 'yue', 'custom'].map(function (k) {
       var r = h('input', { type: 'radio', name: 'uai-persona', value: k, onchange: function () { var p = persona(); p.id = k; writePersona(p); customWrap.hidden = k !== 'custom'; if (k === 'custom') customTa.focus(); render(); } }); pRadios[k] = r;
-      return h('label', { class: 'uai-prov' }, [r, k === 'custom' ? T.custom : T.personas[k][0]]);
+      return h('label', { class: 'uai-prov' }, [r, k === 'custom' ? T.custom : personaName({ id: k })]);
     }));
     var pPreview = h('span', { class: 'uai-help' });
     var customWrap = h('div', { class: 'uai-field' }, [h('label', { for: 'uai-pcustom', text: T.custom }), h('div', { class: 'uai-box uai-tbox' }, [customTa])]);

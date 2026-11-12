@@ -2,6 +2,7 @@
  * - Adds a 设置 button to the site header. The settings dialog switches the companion on or off.
  * - On lesson / course pages, 月未央 sits in the bottom-right corner, counts active study time
  *   (tab visible and the reader active in the last 2 minutes) and cheers or nudges at sensible moments.
+ * Backstory changes must also update assets/ai/ai-island.js (YUE character card).
  * Everything is stored only in this browser (localStorage); nothing is sent anywhere. */
 (function () {
   'use strict';
@@ -49,7 +50,7 @@
     d30: ['happy', '30 minutes today. Way more careful than me — I lost a whole Moon Palace. 😭'],
     d60: ['happy', 'A full hour today! I’m impressed. Truly.'],
     d120: ['pout', 'Two hours today… that’s great, but please rest your eyes.'],
-    done: ['happy', 'Another lesson done! That pays off 0.3 g of my moonlight… I mean: well done!'],
+    done: ['happy', 'Another lesson done! Another entry in my palace-buyback ledger… I mean: well done!'],
     back: ['think', 'You’re back! Want to reread the last bit?'],
     nap: 'dozing off…'
   } : {
@@ -57,7 +58,7 @@
     hiDay: ['sleepy', '白天……我先醒醒。好了，开始吧。'],
     hiLate: ['sleepy', '这么晚还来学？我陪你，但别太久哦。'],
     hiStreak: ['happy', '连续第 {n} 天了！我的月光都亮了一点。'],
-    m10: ['explain', '专心学了 10 分钟！课时费记上，月宫的首付又凑了一点～'],
+    m10: ['explain', '专心学了 10 分钟！课时费记上，赎回月宫的钱又攒了一点～'],
     m25: ['think', '25 分钟啦，站起来喝口水？行情不会跑。'],
     m50: ['sleepy', '50 分钟了！我都犯困了，你休息 5 分钟好不好。'],
     again: ['sleepy', '又过了半小时，让眼睛离开屏幕歇一会儿～'],
@@ -65,7 +66,7 @@
     d30: ['happy', '今天累计 30 分钟，比我当年认真多了。我当年可是把月宫都亏没了 😭'],
     d60: ['happy', '今天学满 1 小时！我是真的佩服。'],
     d120: ['pout', '今天 2 小时了……很棒，但眼睛要休息！'],
-    done: ['happy', '又学完一课！还了 0.3 克月光……我是说，你真棒！'],
+    done: ['happy', '又学完一课！赎回月宫的小账本又记一笔……我是说，你真棒！'],
     back: ['think', '回来啦？刚才那段要不要再看一遍？'],
     nap: '打瞌睡中……'
   };
