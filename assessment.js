@@ -2,17 +2,17 @@ const questionBank=window.MARKET_QUESTIONS||[];
 const testNames={indicator:'可计算指标',tool:'图表与数据',method:'技术分析方法',all:'技术面混合',information:'信息面',market:'信息与技术综合',basics:'小白基础',crypto:'加密进阶',options:'期权进阶',frontier:'加密前沿',career:'Web3 行业与岗位',ecosystem:'生态赛道'};
 const levelNames={beginner:'入门',advanced:'进阶'};
 const testEsc=x=>String(x??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-let attempt=null;
+let attempt=null;let companionAttempt=0;
 function shuffle(items){const a=[...items];for(let i=a.length-1;i>0;i--){const v=new Uint32Array(1);crypto.getRandomValues(v);const j=v[0]%(i+1);[a[i],a[j]]=[a[j],a[i]];}return a;}
 function startTest(scope,level){
  let types=scope==='market'?['indicator','tool','method','information']:['indicator','tool','method'];
  let selected=['all','market'].includes(scope)?shuffle(types.flatMap(type=>shuffle(questionBank.filter(q=>q.type===type&&q.level===level)).slice(0,12/types.length))):shuffle(questionBank.filter(q=>q.type===scope&&q.level===level)).slice(0,12);
  if(selected.length!==12){document.querySelector('.test-history').textContent='题库暂未加载完整，请刷新后重试。';return;}
- attempt={scope,level,index:0,questions:selected.map(q=>({...q,order:shuffle([0,1,2,3])})),answers:Array(selected.length).fill(null)};
+ attempt={runId:String(Date.now())+'-'+(++companionAttempt),scope,level,index:0,questions:selected.map(q=>({...q,order:shuffle([0,1,2,3])})),answers:Array(selected.length).fill(null)};
  document.getElementById('test-setup').hidden=true;document.getElementById('test-results').hidden=true;document.getElementById('test-running').hidden=false;
  renderQuestion();document.getElementById('test-running').scrollIntoView({block:'start'});
 }
-function updateProgress(){const answered=attempt.answers.filter(x=>x!==null).length;document.getElementById('answered-count').textContent=`已答 ${answered} / ${attempt.questions.length}`;document.getElementById('question-map').innerHTML=attempt.questions.map((q,i)=>`<button type="button" data-question="${i}" class="${attempt.answers[i]!==null?'is-answered':''}" ${i===attempt.index?'aria-current="step"':''} aria-label="第${i+1}题，${attempt.answers[i]!==null?'已答':'未答'}">${i+1}</button>`).join('');document.querySelectorAll('[data-question]').forEach(button=>button.addEventListener('click',()=>{attempt.index=Number(button.dataset.question);renderQuestion();}));}
+function updateProgress(){const answered=attempt.answers.filter(x=>x!==null).length;document.getElementById('answered-count').textContent=`已答 ${answered} / ${attempt.questions.length}`;document.getElementById('question-map').innerHTML=attempt.questions.map((q,i)=>`<button type="button" data-question="${i}" class="${attempt.answers[i]!==null?'is-answered':''}" ${i===attempt.index?'aria-current="step"':''} aria-label="第${i+1}题，${attempt.answers[i]!==null?'已答':'未答'}">${i+1}</button>`).join('');document.querySelectorAll('[data-question]').forEach(button=>button.addEventListener('click',()=>{attempt.index=Number(button.dataset.question);renderQuestion();}));document.dispatchEvent(new CustomEvent('unfinished:exercise-progress',{detail:{kind:'assessment',runId:attempt.runId,completed:answered,total:attempt.questions.length}}));}
 function renderQuestion(){const q=attempt.questions[attempt.index];document.getElementById('test-label').textContent=`${testNames[attempt.scope]} · ${levelNames[attempt.level]} · 第 ${attempt.index+1} 题`;
  document.getElementById('question-stage').innerHTML=`<fieldset class="question-fieldset"><legend tabindex="-1">${testEsc(q.stem)}</legend><div class="answer-options">${q.order.map((original,i)=>`<label class="answer-option"><input type="radio" name="answer" value="${original}" ${attempt.answers[attempt.index]===original?'checked':''}><span class="option-letter">${String.fromCharCode(65+i)}</span><span>${testEsc(q.options[original])}</span></label>`).join('')}</div></fieldset>`;
  document.querySelectorAll('input[name=answer]').forEach(input=>input.addEventListener('change',()=>{attempt.answers[attempt.index]=Number(input.value);document.getElementById('test-message').textContent='';updateProgress();}));

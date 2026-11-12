@@ -48,6 +48,18 @@
 .ucp-grid dd{margin:0;font-size:16px;color:#e2c48f}
 .ucp-grid b{font-weight:600}
 .ucp-actions{display:flex;gap:8px;flex-wrap:wrap}
+.ucp-controls{display:flex;align-items:flex-end;gap:8px}
+.ucp-rest{align-self:flex-end;min-width:64px;min-height:44px;background:#0e1016;margin-bottom:8px}
+.ucp-state{overflow-wrap:anywhere}
+.ucp-card-head{flex-wrap:wrap}
+.ucp.is-sleeping .ucp-img{animation:none}
+.ucp-check-actions{display:flex;align-items:center;flex-wrap:wrap;gap:10px;margin:18px 0 6px;font-family:'Noto Sans SC',system-ui,sans-serif}
+.ucp-check-button{min-height:44px;padding:8px 14px;border:1px solid currentColor;border-radius:6px;background:transparent;color:inherit;font:inherit;font-size:14px;cursor:pointer}
+.ucp-check-button:hover{background:rgba(148,112,42,.09)}
+.ucp-check-button[aria-pressed="true"]{background:#0e1016;color:#efe3c4;border-color:#0e1016}
+.ucp-check-button:focus-visible{outline:2px solid currentColor;outline-offset:3px}
+.ucp-check-progress{font-size:13px;font-variant-numeric:tabular-nums}
+.ucp-check-help{flex-basis:100%;margin:0;font-size:13px;line-height:1.7}
 @keyframes ucp-bob{0%,100%{transform:translateY(0)}50%{transform:translateY(-4px)}}
 @keyframes ucp-hop{0%{transform:scale(.92)}60%{transform:scale(1.06)}100%{transform:none}}
 @keyframes ucp-in{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
