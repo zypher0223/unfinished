@@ -4,7 +4,8 @@
  * 也不打包整份 localStorage。恢复默认合并：不清空本机记录，重复导入同一份文件结果不变。 */
 (function () {
   'use strict';
-  var FORMAT = 'unfinished-learning-backup', VERSION = 1, MAX_BYTES = 2 * 1024 * 1024;
+  var FORMAT = 'unfinished-learning-backup', VERSION = 2, // 2：增加作答小结（growth）、已学时间（doneAt）、提醒频率；版本 1 的文件照常可读
+       MAX_BYTES = 2 * 1024 * 1024;
   var KEYS = { learning: 'market-learning-v1', study: 'unfinished.study.v1', checks: 'unfinished.companion.progress.v1', lastTest: 'market-last-assessment', settings: 'unfinished.settings.v1' };
   var SCOPES = ['indicator', 'tool', 'method', 'all', 'information', 'market', 'basics', 'crypto', 'options', 'frontier', 'career', 'ecosystem'];
   var LEVELS = ['beginner', 'advanced'], DAY_FLAGS = ['d30', 'd60', 'd120'];
@@ -19,7 +20,7 @@
   /* 把一份数据整理成只含白名单字段的形状。strict=true（导入）时类型不对就报错；
    * strict=false（导出）时悄悄丢掉不合规的条目。课程、题目已不存在的条目计入 skipped。 */
   function sanitize(src, ctx, strict) {
-    var skipped = 0, out = { learning: { courses: {}, wrong: {}, cases: {}, practice: {}, positions: {}, last: null }, study: { d: {}, total: 0, k: {}, f: {} }, selfChecks: {}, lastAssessment: null, preferences: {} };
+    var skipped = 0, out = { learning: { courses: {}, wrong: {}, cases: {}, practice: {}, positions: {}, growth: [], last: null }, study: { d: {}, total: 0, k: {}, f: {} }, selfChecks: {}, lastAssessment: null, preferences: {} };
     function bad(where) { if (strict) fail('bad-entry', where); return false; }
     function section(parent, name, where) { var v = parent[name]; if (v == null) return {}; if (!isObj(v)) { if (strict) fail('bad-section', where); return {}; } return v; }
     var L = section(src, 'learning', 'learning'), k, v, o;
@@ -27,8 +28,8 @@
     for (k in courses) if (own(courses, k)) {
       v = courses[k];
       if (!ctx.courseKeys[k]) { skipped++; continue; }
-      if (!isObj(v) || (v.done != null && typeof v.done !== 'boolean') || (v.saved != null && typeof v.saved !== 'boolean') || (v.lastVisited != null && !isDate(v.lastVisited))) { bad('learning.courses'); continue; }
-      o = {}; if (v.done) o.done = true; if (v.saved) o.saved = true; if (v.lastVisited) o.lastVisited = v.lastVisited;
+      if (!isObj(v) || (v.done != null && typeof v.done !== 'boolean') || (v.saved != null && typeof v.saved !== 'boolean') || (v.lastVisited != null && !isDate(v.lastVisited)) || (v.doneAt != null && !isDate(v.doneAt))) { bad('learning.courses'); continue; }
+      o = {}; if (v.done) o.done = true; if (v.saved) o.saved = true; if (v.lastVisited) o.lastVisited = v.lastVisited; if (v.done && v.doneAt) o.doneAt = v.doneAt;
       if (o.done || o.saved || o.lastVisited) out.learning.courses[k] = o;
     }
     function answerRecord(id, v, where, needKind) {
@@ -56,6 +57,15 @@
       if (!isObj(v) || typeof v.section !== 'string' || !/^[A-Za-z][\w-]{0,59}$/.test(v.section) || !isDate(v.date)) { bad('learning.positions'); continue; }
       out.learning.positions[k] = { section: v.section, date: v.date };
     }
+    // 作答小结事件：只有题号、结果、来源、时间；题目已不存在的跳过。
+    var G = L.growth == null ? {} : L.growth, ev = Array.isArray(G) ? G : (isObj(G) ? G.events : null), seen = {};
+    if (L.growth != null && !isObj(G) && !Array.isArray(G)) bad('learning.growth');
+    if (ev != null && !Array.isArray(ev)) bad('learning.growth'); else (ev || []).slice(-400).forEach(function (e) {
+      if (!isObj(e) || typeof e.id !== 'string' || e.id.length > 160 || typeof e.q !== 'string' || ['right', 'wrong', 'fix'].indexOf(e.r) < 0 || ['lesson', 'review', 'test', 'case', 'other'].indexOf(e.src) < 0 || !isDate(e.t) || (e.topic != null && typeof e.topic !== 'string')) { bad('learning.growth'); return; }
+      if (!own(ctx.questionIds, e.q) && !own(ctx.caseOptions, e.q)) { skipped++; return; }
+      if (seen[e.id]) return; seen[e.id] = true;
+      var item = { id: e.id, t: e.t, q: e.q, r: e.r, src: e.src }; if (e.topic && ctx.courseKeys[e.topic]) item.topic = e.topic; out.learning.growth.push(item);
+    });
     if (L.last != null) { if (typeof L.last !== 'string') bad('learning.last'); else if (ctx.courseKeys[L.last]) out.learning.last = L.last; else skipped++; }
 
     var S = section(src, 'study', 'study'), days = section(S, 'd', 'study.d'), per = section(S, 'k', 'study.k'), flags = section(S, 'f', 'study.f');
@@ -80,14 +90,15 @@
     if (P.paper === 'book' || P.paper === 'white') out.preferences.paper = P.paper; else if (P.paper != null) bad('preferences');
     if (typeof P.companion === 'boolean') out.preferences.companion = P.companion; else if (P.companion != null) bad('preferences');
     if (typeof P.companionSleep === 'boolean') out.preferences.companionSleep = P.companionSleep; else if (P.companionSleep != null) bad('preferences');
+    if (['quiet', 'normal', 'lively'].indexOf(P.companionPace) >= 0) out.preferences.companionPace = P.companionPace; else if (P.companionPace != null) bad('preferences');
     return { data: out, skipped: skipped };
   }
 
   /* raw = 本机各个键读出来的对象（可能为 null）。返回要写进文件的对象。 */
   function collect(raw, ctx, now) {
     var settings = isObj(raw.settings) ? raw.settings : {};
-    var clean = sanitize({ learning: raw.learning || {}, study: raw.study || {}, selfChecks: raw.checks || {}, lastAssessment: raw.lastTest, preferences: { lang: settings.lang, paper: settings.paper, companion: settings.companion, companionSleep: settings.companionSleep } }, ctx, false).data;
-    return { format: FORMAT, version: VERSION, exportedAt: now, site: '未尽 UNFINISHED', learning: clean.learning, study: clean.study, selfChecks: clean.selfChecks, lastAssessment: clean.lastAssessment, preferences: clean.preferences };
+    var clean = sanitize({ learning: raw.learning || {}, study: raw.study || {}, selfChecks: raw.checks || {}, lastAssessment: raw.lastTest, preferences: { lang: settings.lang, paper: settings.paper, companion: settings.companion, companionSleep: settings.companionSleep, companionPace: settings.companionPace } }, ctx, false).data;
+    return { format: FORMAT, version: VERSION, exportedAt: now, site: '未尽 UNFINISHED', learning: Object.assign({}, clean.learning, { growth: { events: clean.learning.growth } }), study: clean.study, selfChecks: clean.selfChecks, lastAssessment: clean.lastAssessment, preferences: clean.preferences };
   }
   /* 读文件文字 → 校验后的数据。出错时抛出带 code 的 Error，不改任何记录。 */
   function parse(text, ctx) {
@@ -110,12 +121,13 @@
     var L = isObj(raw.learning) ? copy(raw.learning) : {}, S = isObj(raw.study) ? copy(raw.study) : {}, C = isObj(raw.checks) ? copy(raw.checks) : {}, k, q;
     ['courses', 'wrong', 'cases', 'practice', 'positions'].forEach(function (n) { if (!isObj(L[n])) L[n] = {}; });
     ['d', 'k', 'f'].forEach(function (n) { if (!isObj(S[n])) S[n] = {}; });
-    var sum = { done: 0, saved: 0, wrongNew: [], wrongUpdated: 0, cases: 0, practice: 0, positions: 0, days: 0, seconds: 0, checks: 0, lastTest: false, prefs: [], kept: 0 };
+    var sum = { growth: 0, done: 0, saved: 0, wrongNew: [], wrongUpdated: 0, cases: 0, practice: 0, positions: 0, days: 0, seconds: 0, checks: 0, lastTest: false, prefs: [], kept: 0 };
     for (k in data.learning.courses) {
       var b = data.learning.courses[k], a = isObj(L.courses[k]) ? L.courses[k] : (L.courses[k] = {});
       if (b.done && !a.done) { a.done = true; sum.done++; }
       if (b.saved && !a.saved) { a.saved = true; sum.saved++; }
       if (b.lastVisited && (!isDate(a.lastVisited) || newer(b.lastVisited, a.lastVisited))) a.lastVisited = b.lastVisited;
+      if (b.doneAt && a.done && !isDate(a.doneAt)) a.doneAt = b.doneAt; // 只补缺，不改本机已有的时间
     }
     for (k in data.learning.wrong) {
       if (!own(L.wrong, k)) { sum.wrongNew.push(k); if (opt.wrongNew) L.wrong[k] = data.learning.wrong[k]; }
@@ -136,6 +148,13 @@
       }
     }
     for (k in data.learning.positions) { if (!isObj(L.positions[k]) || newer(data.learning.positions[k].date, L.positions[k].date)) { L.positions[k] = data.learning.positions[k]; sum.positions++; } }
+    // 作答小结：按事件编号合并，同一事件只留一份；导入不会触发任何鼓励。
+    if (data.learning.growth.length) {
+      if (!isObj(L.growth)) L.growth = { v: 1, events: [] }; if (!Array.isArray(L.growth.events)) L.growth.events = [];
+      var have = {}; L.growth.events.forEach(function (e) { if (e && e.id) have[e.id] = true; });
+      data.learning.growth.forEach(function (e) { if (!have[e.id]) { have[e.id] = true; L.growth.events.push(e); sum.growth++; } });
+      if (sum.growth) { L.growth.events.sort(function (x, y) { return String(x.t) < String(y.t) ? -1 : String(x.t) > String(y.t) ? 1 : 0; }); if (L.growth.events.length > 400) L.growth.events = L.growth.events.slice(-400); }
+    }
     if (!L.last && data.learning.last) L.last = data.learning.last;
     var before = typeof S.total === 'number' ? S.total : 0, total = 0;
     for (k in data.study.d) { var have = typeof S.d[k] === 'number' ? S.d[k] : 0; if (!own(S.d, k)) sum.days++; if (data.study.d[k] > have) S.d[k] = data.study.d[k]; }
@@ -162,13 +181,13 @@
   var EN = (document.documentElement.lang || '').toLowerCase().indexOf('en') === 0;
   var T = EN ? {
     intro: 'Your learning record lives only in this browser. Export it to a file to keep a copy or move it to another browser. Nothing is uploaded.',
-    exportBtn: 'Export learning record', importBtn: 'Restore from a file…', where: 'The file is saved wherever your browser saves downloads (or the place you choose). It contains lesson marks, saved lessons, mistakes, case answers, lesson quiz answers, reading positions and study time. It never contains AI keys or settings from the AI panel.',
+    exportBtn: 'Export learning record', importBtn: 'Restore from a file…', where: 'The file is saved wherever your browser saves downloads (or the place you choose). It contains lesson marks, saved lessons, mistakes, case answers, lesson quiz answers, the answer history behind the study summary, reading positions and study time. It never contains AI keys or settings from the AI panel.',
     exported: 'Exported {file}: {a} lessons marked, {b} mistakes, {c} study days.', exportedEmpty: 'Exported {file}. There is no learning record in this browser yet, so the file is nearly empty.',
     preview: 'What this file will restore', from: 'Backup made on {d}.', none: 'Nothing new: everything in this file is already in this browser.',
-    done: '{n} lessons newly marked as read', saved: '{n} lessons newly saved', wrongUpdated: '{n} mistakes updated to the newer record', cases: '{n} case answers', practice: '{n} lesson quiz answers', positions: '{n} reading positions', days: '{n} new study days', seconds: 'study time grows by {n} min', checks: '{n} self-check marks', lastTest: 'the most recent test score',
+    done: '{n} lessons newly marked as read', saved: '{n} lessons newly saved', wrongUpdated: '{n} mistakes updated to the newer record', cases: '{n} case answers', practice: '{n} lesson quiz answers', positions: '{n} reading positions', growth: '{n} answer-history entries for the study summary', days: '{n} new study days', seconds: 'study time grows by {n} min', checks: '{n} self-check marks', lastTest: 'the most recent test score',
     rules: 'How conflicts are handled: this browser’s record is never cleared. “Read” and “saved” marks carry no time, so marks already here are kept and missing ones are added. For mistakes and answers, the newer dated record wins. Study time takes the larger value per day rather than adding, so importing the same file twice changes nothing.',
     wrongNew: 'Also add {n} mistakes that are in the file but not in this browser', wrongNote: 'The file cannot tell whether you already reviewed and removed these here. If you did, untick this box.', wrongList: 'Show these questions',
-    prefs: 'Also restore interface preferences (language, reading background, companion on/off and sleep)', skipped: '{n} entries refer to lessons or questions that no longer exist and were skipped.',
+    prefs: 'Also restore interface preferences (language, reading background, companion on/off, sleep and how often she speaks)', skipped: '{n} entries refer to lessons or questions that no longer exist and were skipped.',
     kept: '{n} entries differ, and this browser’s version is kept.',
     confirm: 'Restore', cancel: 'Cancel', ok: 'Restored. Your progress, mistakes and study time on this page are up to date.', okPrefs: ' Preference changes apply after you reload the page.',
     blocked: 'This browser is blocking storage, so a restore cannot be saved. Allow site data for this site (or leave private mode), then try again. Export still works for what is on this page.',
@@ -177,13 +196,13 @@
     untouched: 'Your current record was not changed.'
   } : {
     intro: '学习记录只保存在当前浏览器。导出成文件可以留一份备份，或搬到另一个浏览器。不会上传到任何地方。',
-    exportBtn: '导出学习记录', importBtn: '从文件恢复…', where: '文件保存在浏览器的下载位置（或你选择的位置）。里面有：已学和收藏标记、错题、案例作答、课后小测作答、阅读位置和学习时长。不包含 AI 面板里的密钥和设置。',
+    exportBtn: '导出学习记录', importBtn: '从文件恢复…', where: '文件保存在浏览器的下载位置（或你选择的位置）。里面有：已学和收藏标记、错题、案例作答、课后小测作答、作答小结记录、阅读位置和学习时长。不包含 AI 面板里的密钥和设置。',
     exported: '已导出 {file}：{a} 课已学标记、{b} 道错题、{c} 天学习时长。', exportedEmpty: '已导出 {file}。当前浏览器还没有学习记录，所以文件几乎是空的。',
     preview: '这份文件将恢复的内容', from: '备份时间：{d}。', none: '没有新内容：文件里的记录本机都已经有了。',
-    done: '新增 {n} 课“已学”标记', saved: '新增 {n} 课收藏', wrongUpdated: '{n} 道错题更新为较新的记录', cases: '{n} 个案例作答', practice: '{n} 道课后小测作答', positions: '{n} 个阅读位置', days: '新增 {n} 天学习时长', seconds: '累计学习时长增加 {n} 分钟', checks: '{n} 个自测完成标记', lastTest: '最近一次测验成绩',
+    done: '新增 {n} 课“已学”标记', saved: '新增 {n} 课收藏', wrongUpdated: '{n} 道错题更新为较新的记录', cases: '{n} 个案例作答', practice: '{n} 道课后小测作答', positions: '{n} 个阅读位置', growth: '{n} 条作答小结记录', days: '新增 {n} 天学习时长', seconds: '累计学习时长增加 {n} 分钟', checks: '{n} 个自测完成标记', lastTest: '最近一次测验成绩',
     rules: '冲突怎么处理：本机记录不会被清空。“已学”“收藏”没有记录时间，分不出谁新，所以本机已有的标记保留，缺的补上。错题和作答两边都有日期时取较新的。学习时长同一天取较大值、不相加，所以同一份文件导入两次结果不变。',
     wrongNew: '同时加入 {n} 道“文件里有、本机没有”的错题', wrongNote: '文件无法判断这些题你是不是已经在本机复习并移出了。如果是，请取消勾选。', wrongList: '查看这些题目',
-    prefs: '同时恢复界面偏好（语言、阅读背景、伴学开关与睡眠）', skipped: '有 {n} 条记录对应的课程或题目已不存在，已跳过。',
+    prefs: '同时恢复界面偏好（语言、阅读背景、伴学开关、睡眠与提醒频率）', skipped: '有 {n} 条记录对应的课程或题目已不存在，已跳过。',
     kept: '有 {n} 条记录两边不同，保留本机的。',
     confirm: '确认恢复', cancel: '取消', ok: '已恢复。本页的课程进度、错题和学习时长已更新。', okPrefs: '偏好的改动在刷新页面后生效。',
     blocked: '当前浏览器阻止了存储，恢复的内容无法保存。请允许本站保存数据（或退出无痕模式）后再试。导出仍可用于本页已有的内容。',
@@ -238,7 +257,7 @@
       var lines = [];
       if (s.done) lines.push(fill(T.done, { n: s.done })); if (s.saved) lines.push(fill(T.saved, { n: s.saved }));
       if (s.wrongUpdated) lines.push(fill(T.wrongUpdated, { n: s.wrongUpdated })); if (s.cases) lines.push(fill(T.cases, { n: s.cases }));
-      if (s.practice) lines.push(fill(T.practice, { n: s.practice })); if (s.positions) lines.push(fill(T.positions, { n: s.positions }));
+      if (s.practice) lines.push(fill(T.practice, { n: s.practice })); if (s.positions) lines.push(fill(T.positions, { n: s.positions })); if (s.growth) lines.push(fill(T.growth, { n: s.growth }));
       if (s.days) lines.push(fill(T.days, { n: s.days })); if (s.seconds >= 60) lines.push(fill(T.seconds, { n: Math.floor(s.seconds / 60) }));
       if (s.checks) lines.push(fill(T.checks, { n: s.checks })); if (s.lastTest) lines.push(T.lastTest);
       if (!lines.length && !(wrongBox.checked && s.wrongNew.length) && !s.prefs.length) lines.push(T.none);

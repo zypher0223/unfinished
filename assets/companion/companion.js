@@ -14,6 +14,8 @@
   function art(k) { return ASSETS + 'mascot/' + k + '.webp?v=2'; }
 
   var T = EN ? {
+    paceTitle: 'How often she speaks', paceQuiet: 'Rarely', paceNormal: 'Standard', paceLively: 'More often',
+    paceHelp: 'Rarely: she speaks only when you reach the halfway or all-answered point of an exercise, or get a past mistake right. Standard: also greetings and break reminders, at least 90 seconds apart. More often: the gap drops to 45 seconds. Sleep and the on/off switch are separate and always win.',
     sleep: 'Sleep', wake: 'Wake up', sleepLabel: 'Let Yue sleep', wakeLabel: 'Wake Yue up',
     asleep: 'sleeping by your choice', napping: 'having a little nap', awake: 'studying with you',
     selfcheck: 'Mark this exercise complete', selfcheckDone: 'Exercise marked complete',
@@ -29,8 +31,10 @@
     meLabel: function (m) { return 'Yue Weiyang, study buddy. ' + m + ' min studied today. Open details.'; },
     noData: 'No study time yet. It starts counting as you read.',
     paperTitle: 'Reading background', paperBook: 'Book page', paperWhite: 'Plain white', paperHelp: 'Applies to lessons, catalogs, quizzes and other reading pages. Book page is a soft paper tone that is easier on the eyes over long sessions; the home page stays night-sky.',
-    langTitle: 'Language', langHelp: 'Switches the site interface. In English, lessons open in their English written version; Chinese lessons stay as they are. Quiz questions are in Chinese for now.'
+    langTitle: 'Language', langHelp: 'Switches the site interface. In English, lessons open in their English written version; Chinese lessons stay as they are. Quiz questions and explanations are shown in English too.'
   } : {
+    paceTitle: '提醒频率', paceQuiet: '少量', paceNormal: '标准', paceLively: '较活跃',
+    paceHelp: '少量：只在练习做到一半、全部作答、把旧错题答对时说话。标准：另外有问候和休息提醒，两次之间至少隔 90 秒。较活跃：间隔缩短到 45 秒。睡觉和伴学开关单独控制，优先于这里。',
     sleep: '睡觉', wake: '唤醒', sleepLabel: '让月未央睡觉', wakeLabel: '唤醒月未央',
     asleep: '你让我睡觉啦', napping: '正在小憩', awake: '正在陪你学习',
     selfcheck: '标记这题已完成', selfcheckDone: '这题已标记完成',
@@ -46,7 +50,7 @@
     meLabel: function (m) { return '月未央 学习陪伴，今天已学 ' + m + ' 分钟，点开查看'; },
     noData: '还没有记录。开始阅读就会自动计时。',
     paperTitle: '阅读背景', paperBook: '书页', paperWhite: '纯白', paperHelp: '用于课程、目录、测验等阅读页面。书页是柔和的纸张底色，长时间阅读更不刺眼；首页保持夜空。',
-    langTitle: '界面语言', langHelp: '切换网站界面语言。选 English 后，课程会打开对应的英文文字教学；中文课程内容不受影响。测验题目暂时只有中文。'
+    langTitle: '界面语言', langHelp: '切换网站界面语言。选 English 后，课程会打开对应的英文文字教学；中文课程内容不受影响。测验题目和解析也会显示英文。'
   };
   // [mood, text]; {n} is filled in
   var L = EN ? {
@@ -63,6 +67,8 @@
     half: ['happy', 'Half the exercises are complete! Yay! Ahem, that little milestone deserves a proper cheer. Let’s take the rest one at a time.'],
     all: ['happy', 'Every exercise on this page is complete! That patience deserves credit. Let’s look back at the explanations.'],
     testHalf: ['happy', 'You’ve answered {n} questions — halfway! Ahem, that steady effort deserves a cheer. Take the rest one at a time.'],
+    fix: ['happy', 'You got this one wrong before, and right this time! Hmph, not that I was keeping count… well done.'],
+    fixMany: ['happy', '{n} questions you once got wrong are right this time! Ahem, I only happened to notice. Nicely done.'],
     testAll: ['happy', 'All {n} questions answered! Yay! That persistence deserves a cheer. Submit when you’re ready, then check the reasoning.'],
     hiNight: ['happy', 'Night shift starts! Ahem, I prepared a little. Which lesson shall we work through?'],
     hiDay: ['sleepy', 'Daytime… hmm, I’m up! Let’s start with one little idea.'],
@@ -93,6 +99,8 @@
     half: ['happy', '这页的自测已经完成一半啦，好耶！咳，这个小进展得认真夸一下。后面咱们也一题一题来。'],
     all: ['happy', '这页的练习都完成啦，好耶！这份耐心值得好好夸一下，接着回看解析，把还没接上的地方找出来吧。'],
     testHalf: ['happy', '已经答了 {n} 题，走到一半啦！咳，这份耐心值得夸一下，后面也一题一题慢慢来。'],
+    fix: ['happy', '这道题上次答错，这次答对啦！哼，才不是特意帮你记着的……做得好。'],
+    fixMany: ['happy', '有 {n} 道以前答错的题，这次答对了！咳，我只是刚好数了一下。做得好。'],
     testAll: ['happy', '{n} 题都作答了，好耶！认真走到这里，这份坚持很棒。准备好就交卷，咱们再回头看看判断理由。'],
     hiNight: ['happy', '夜班开始！咳，今天有认真备课的。今晚咱们一起学哪一课？'],
     hiDay: ['sleepy', '白天……唔，我醒啦！先从一个小知识点开始，好不好？'],
@@ -145,7 +153,13 @@
   }
 
   /* ---------- settings dialog ---------- */
-  var dlg, toggle, statsLine, clearBtn, clearArmed = false;
+  var dlg, toggle, statsLine, clearBtn, clearArmed = false, paceBtns = [];
+  // How often she speaks: 'quiet' | 'normal' | 'lively'. Separate from sleep and the on/off switch.
+  function paceNow() { var p = settings().companionPace; return p === 'quiet' || p === 'lively' ? p : 'normal'; }
+  function paceBtn(code, label) {
+    var b = h('button', { type: 'button', class: 'ucp-segbtn', role: 'radio', 'aria-checked': String(paceNow() === code), text: label, onclick: function () { var s = settings(); s.companionPace = code; save(SKEY, s); paceBtns.forEach(function (x) { x[1].setAttribute('aria-checked', String(x[0] === code)); }); } });
+    paceBtns.push([code, b]); return b;
+  }
   function buildSettings() {
     toggle = h('input', { type: 'checkbox', id: 'ucp-toggle', onchange: function () { var s = settings(); s.companion = toggle.checked; save(SKEY, s); applyCompanion(); } });
     statsLine = h('p', { class: 'ucp-stats-line' });
@@ -171,7 +185,10 @@
       ]),
       h('section', { class: 'ucp-sec' }, [
         h('div', { class: 'ucp-sec-row' }, [h('img', { src: art('avatar'), alt: '', width: '48', height: '48', class: 'ucp-sec-av' }), h('div', null, [h('h3', { text: T.compTitle }), h('label', { class: 'ucp-switch', for: 'ucp-toggle' }, [toggle, h('span', { class: 'ucp-track', 'aria-hidden': 'true' }), h('span', { text: T.compToggle })])])]),
-        h('p', { class: 'ucp-help', text: T.compHelp }), h('p', { class: 'ucp-help', text: T.sleepHelp }), statsLine, clearBtn
+        h('p', { class: 'ucp-help', text: T.compHelp }), h('p', { class: 'ucp-help', text: T.sleepHelp }),
+        h('h4', { id: 'ucp-pace-title', class: 'ucp-pace-title', text: T.paceTitle }),
+        h('div', { class: 'ucp-seg', role: 'radiogroup', 'aria-labelledby': 'ucp-pace-title' }, [paceBtn('quiet', T.paceQuiet), paceBtn('normal', T.paceNormal), paceBtn('lively', T.paceLively)]),
+        h('p', { class: 'ucp-help', text: T.paceHelp }), statsLine, clearBtn
       ])
     ]);
     dlg.addEventListener('click', function (e) { if (e.target === dlg) dlg.close(); });
@@ -186,6 +203,7 @@
   }
   function fillSettings() {
     toggle.checked = settings().companion;
+    paceBtns.forEach(function (x) { x[1].setAttribute('aria-checked', String(x[0] === paceNow())); });
     var s = data(), t = s.d[dayKey()] || 0;
     statsLine.textContent = s.total ? T.today + ' ' + mins(t) + T.min + ' · ' + T.streak + ' ' + streak(s) + T.days + ' · ' + T.total + ' ' + fmtTotal(s.total) : T.noData;
   }
@@ -203,7 +221,7 @@
   var IS_STUDY = !!lessonHost || IS_ASSESSMENT;
   var LKEY = lessonHost ? lessonHost.getAttribute('data-learning-key') : '';
   var box, me, img, badge, bubble, card, cardStats, sleepBtn, stateLine;
-  var timer = null, bubbleTimer = null, hiddenForPage = false;
+  var timer = null, bubbleTimer = null, hiddenForPage = false, queuedTimer = null;
   var sessionSec = 0, lastActive = Date.now(), idle = false, fired = {}, lastBubble = 0, mood = 'think';
   var nextSwap = 0, awakeUntil = 0, readingSections = [], visibleSections = [], sectionSeconds = {}, readSections = {};
   var exerciseRuns = {}, lessonChecks = [], pageProgress = null;
@@ -266,7 +284,9 @@
   }
   function say(line, n, force) {
     if (!box || box.hidden || !canSpeak(force)) return false;
-    var now = Date.now(); if (!force && now - lastBubble < 90000) return false;
+    var now = Date.now(), pace = paceNow();
+    // "Rarely" keeps only milestone and corrected-mistake praise; "more often" shortens the gap between ordinary lines.
+    if (!force && (pace === 'quiet' || now - lastBubble < (pace === 'lively' ? 45000 : 90000))) return false;
     lastBubble = now;
     bubble.textContent = line[1].replace('{n}', n); bubble.hidden = false; setMood(line[0]);
     box.classList.remove('is-pop'); void box.offsetWidth; box.classList.add('is-pop');
@@ -300,6 +320,13 @@
     if (mood === 'nap') lineKey += 'Wake';
     say(L[lineKey], completed, true);
   }
+  // A question that was in the mistake list was answered correctly just now (never fired for restored or imported records).
+  document.addEventListener('unfinished:growth', function (e) {
+    var d = e.detail; if (!d || d.kind !== 'fix' || !Number.isInteger(d.count) || d.count < 1) return;
+    // If a milestone bubble has just appeared, let it be read first instead of replacing it at once.
+    var wait = bubble && !bubble.hidden ? Math.max(0, 6500 - (Date.now() - lastBubble)) : 0;
+    clearTimeout(queuedTimer); queuedTimer = setTimeout(function () { say(d.count > 1 ? L.fixMany : L.fix, d.count, true); }, wait);
+  });
   document.addEventListener('unfinished:exercise-progress', function (e) {
     var d = e.detail;
     if (!d) return;

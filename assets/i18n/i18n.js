@@ -86,6 +86,7 @@
     [/^第(\d+)题，(.+)$/, function (m) { return 'Question ' + m[1] + ', ' + (m[2] === '未答' ? 'unanswered' : 'answered'); }],
     [/^(.+) · (.+)，已答 (\d+) \/ 12，停在第 (\d+) 题。$/, function (m) { return (D(m[1]) || m[1]) + ' · ' + (LV[m[2]] || m[2]) + ': ' + m[3] + ' of 12 answered, stopped at question ' + m[4] + '.'; }],
     [/^(\d+)项信息课均已附各自的读数面板。这里先比较物价、资金流、利率与库存四种不同口径。$/, function (m) { return 'All ' + m[1] + ' information lessons have their own reading panel. Here we first compare four different measures: prices, fund flows, interest rates and inventories.'; }],
+    [/^其中 (\d+) 道是错题本里的旧题，这次答对了，已移出待复习。$/, function (m) { return m[1] + ' of these were in your mistake list and are right this time; they have been removed from review.'; }],
     [/^本次答对 (\d+) \/ (\d+) 题$/, function (m) { return 'You got ' + m[1] + ' / ' + m[2] + ' right'; }],
     [/^(.+) · (.+)。先看判断理由，再回到相关课程复习。$/, function (m) { return (D(m[1]) || m[1]) + ' · ' + (LV[m[2]] || m[2]) + '. Read the reasoning first, then review the related lessons.'; }],
     [/^第 (\d+) 题 · (.+)$/, function (m) { var R = { '答对': 'Correct', '正确': 'Correct', '回答正确': 'Correct', '回答错误': 'Wrong', '需要复习': 'Needs review', '答错': 'Wrong' }; return 'Question ' + m[1] + ' · ' + m[2].split(' · ').map(function (x) { return R[x] || D(x) || x; }).join(' · '); }],

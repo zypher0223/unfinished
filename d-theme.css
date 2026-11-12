@@ -187,3 +187,14 @@ html[lang=en] .d-hero h1{white-space:normal;font-size:clamp(40px,5vw,72px)}
 .backup-choice{display:flex;gap:10px;align-items:flex-start;margin:10px 0;line-height:1.7}
 .backup-choice input{margin-top:.35em;width:18px;height:18px;flex:none}
 .study-loading{color:#64655e}
+/* 学习小结、交卷后的纠错提示、伴学提醒频率 */
+.growth-summary{margin:18px 0 22px;padding:16px 18px;border:1px solid #d3d2ca}
+.growth-summary h3{margin:0 0 8px}
+.growth-table{border-collapse:collapse;width:100%;max-width:520px;font-variant-numeric:tabular-nums}
+.growth-table caption{text-align:left;font-size:.85rem;color:#64655e;padding-bottom:6px}
+.growth-table th,.growth-table td{padding:7px 10px 7px 0;border-bottom:1px solid #dedfd7;text-align:right;font-weight:400}
+.growth-table tbody th{text-align:left}
+.growth-table thead th{font-weight:600}
+.growth-status{min-height:1.6em;line-height:1.7}
+.result-fixed{font-weight:600}
+.ucp-pace-title{margin:14px 0 8px;font-size:14px;font-weight:600}

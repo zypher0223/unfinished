@@ -14,13 +14,15 @@
   function h(tag,attrs,kids){var el=document.createElement(tag);Object.keys(attrs||{}).forEach(function(k){if(k==='text')el.textContent=attrs[k];else el.setAttribute(k,attrs[k]);});(kids||[]).forEach(function(c){el.appendChild(c);});return el;}
   function fill(s,n,total){return s.replace('{n}',n).replace('{total}',total);}
   function storedChoice(value){return value&&Number.isInteger(value.answer)&&value.answer>=0&&value.answer<4?value.answer:null;}
-  function recordAnswer(key,q,answer){
+  function recordAnswer(key,q,answer,run){
     if(!window.LearningStore)return;
+    var out=null;
     LearningStore.write(function(s){
       s.practice=s.practice&&typeof s.practice==='object'?s.practice:{};
       if(key){s.practice[key]=s.practice[key]&&typeof s.practice[key]==='object'?s.practice[key]:{};s.practice[key][q.id]={answer:answer,date:new Date().toISOString()};}
-      if(answer===q.answer)delete s.wrong[q.id];else s.wrong[q.id]={answer:answer,kind:'question',date:new Date().toISOString()};
+      out=LearningStore.answer(s,{q:q.id,answer:answer,correct:answer===q.answer,src:key?'lesson':'review',run:run,topic:key||null});
     });
+    return out;
   }
   function normalQuestion(q){var translated=EN&&q.stemEn&&q.optionsEn&&q.optionExplanationsEn;return {id:q.id,stem:translated?q.stemEn:q.stem,options:translated?q.optionsEn:q.options,answer:q.answer,explanation:translated?q.explanationEn:q.explanation,optionExplanations:translated?q.optionExplanationsEn:q.optionExplanations,lang:translated?'en':'zh'};}
   var serial=0;
@@ -52,7 +54,9 @@
         result.appendChild(h('p',{text:q.explanation}));
         var list=h('ol',{class:'practice-explanations'});q.options.forEach(function(o,i){var item=h('li',{});item.appendChild(h('strong',{text:String.fromCharCode(65+i)+'. '+o}));if(i===q.answer)item.appendChild(h('span',{class:'practice-answer-mark',text:' · '+T.correct,lang:EN?'en':'zh'}));if(i===answer)item.appendChild(h('span',{class:'practice-answer-mark',text:' · '+T.yours,lang:EN?'en':'zh'}));item.appendChild(h('p',{text:q.optionExplanations[i]}));list.appendChild(item);});result.appendChild(list);
       }
-      check.addEventListener('click',function(){if(selected===null)return;recordAnswer(key,q,selected);reveal(selected);publish(false,false);});
+      check.addEventListener('click',function(){if(selected===null)return;var out=recordAnswer(key,q,selected,run);reveal(selected);publish(false,false);
+        // 以前答错、这次答对：进度先报，再告诉伴学（只带数量和来源，不带题目内容）。
+        if(out&&out.recorded&&out.result==='fix')document.dispatchEvent(new CustomEvent('unfinished:growth',{detail:{kind:'fix',count:1,src:key?'lesson':'review'}}));});
       field.appendChild(options);field.appendChild(check);field.appendChild(result);host.appendChild(field);
       var restored=storedChoice(previous[q.id]);if(restored!==null)reveal(restored);
     });

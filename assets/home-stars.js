@@ -15,6 +15,7 @@
     touch: '每颗星是一课。点一下星星看课程名，再点一下进入课程。'
   };
   let tab = 'm', all = touch, tip = null, timer = 0, armed = -1, focusIdx = 0, pts = [], lastW = 0;
+  const labW = {}; let fitTimer = 0;
 
   const el = (tag, cls, text) => { const e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; };
   const svgPath = (W, H, d, stroke, opacity) => {
@@ -29,14 +30,16 @@
   // 市场：分类依次排开，短的分类接在同一行，长的自动换行；y 方向是固定种子的小幅随机游走
   function layoutMarket(W) {
     const sx = W < 700 ? 11 : 12, rowH = 76, wrapH = 52, gap = 64, out = { pts: [], lines: '', labels: [] };
-    let x = 0, yc = 58, seed = 23; const r = () => (seed = (seed * 16807) % 2147483647) / 2147483647;
+    let x = 0, yc = 58, seed = 23, labEnd = 0; const r = () => (seed = (seed * 16807) % 2147483647) / 2147483647;
     groups.filter(g => g.g === 'm').forEach(g => {
       const items = lessons(g), need = (items.length - 1) * sx;
-      if (x > 0 && items.length <= 20 && x + gap + need <= W) x += gap; else if (x > 0) { x = 0; yc += rowH; }
-      out.labels.push({ x, y: yc - 40, label: g.label, n: items.length });
+      // 分类标签的实际宽度（随语言变化，render 之后量出来）也要放得下，且不压到同一行前一个标签
+      const lw = labW[g.label] || 0, nx = Math.max(x + gap, labEnd + 14);
+      if (x > 0 && items.length <= 20 && nx + Math.max(need, lw) <= W) x = nx; else if (x > 0) { x = 0; yc += rowH; }
+      out.labels.push({ x, y: yc - 40, label: g.label, n: items.length }); labEnd = x + lw;
       let px = x, y = yc, first = true;
       items.forEach(t => {
-        if (px > W - 4) { px = 0; yc += wrapH; y = yc; first = true; }
+        if (px > W - 4) { px = 0; yc += wrapH; y = yc; first = true; labEnd = 0; }
         y += (r() - .5) * 13; y = Math.max(yc - 18, Math.min(yc + 18, y));
         out.pts.push({ x: px, y, t, cat: g.label });
         out.lines += (first ? 'M' : 'L') + px.toFixed(1) + ' ' + y.toFixed(1);
@@ -88,7 +91,7 @@
     pts = L.pts.map(p => ({ ...p, read: done(p.t.key) }));
     if (focusIdx >= pts.length) focusIdx = 0;
     hideTip(); armed = -1; map.textContent = ''; map.style.height = L.H + 'px';
-    L.labels.forEach(b => { const p = el('p', 's-lab'); p.style.left = b.x + 'px'; p.style.top = b.y + 'px'; p.append(el('span', '', b.label), ' · ', el('span', '', String(b.n))); map.append(p); });
+    L.labels.forEach(b => { const p = el('p', 's-lab'); p.dataset.g = b.label; p.style.left = b.x + 'px'; p.style.top = b.y + 'px'; p.append(el('span', '', b.label), ' · ', el('span', '', String(b.n))); map.append(p); });
     if (w) map.append(svgPath(W, L.H, L.lines, '#1E2A3D'));
     const nav = el('nav', 's-stars'); nav.setAttribute('aria-label', TEXT[tab].label);
     const lit = el('div', 's-lit' + (all ? ' all' : '')); lit.setAttribute('aria-hidden', 'true');
@@ -107,6 +110,17 @@
     });
     map.append(nav, lit);
     if (w) { const pulse = el('div', 's-pulse'); pulse.setAttribute('aria-hidden', 'true'); pts.forEach((p, i) => { const b = el('i', 's-blk'); b.style.left = p.x + 'px'; b.style.top = p.y + 'px'; b.style.animationDelay = (i * .25) + 's'; pulse.append(b); }); map.append(pulse); }
+    fitLabels();
+  }
+
+  // 英文标签比中文长：等翻译脚本改完文字后量一次宽度，变了就按新宽度重排（宽度稳定后不再重排）
+  function fitLabels() {
+    clearTimeout(fitTimer);
+    fitTimer = setTimeout(() => {
+      let changed = false;
+      map.querySelectorAll('.s-lab').forEach(p => { const w = Math.ceil(p.offsetWidth); if (w && Math.abs((labW[p.dataset.g] || 0) - w) > 1) { labW[p.dataset.g] = w; changed = true; } });
+      if (changed) render();
+    }, 60);
   }
 
   function setTab(next) {

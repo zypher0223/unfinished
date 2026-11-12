@@ -46,8 +46,9 @@
   }
   function init() {
     note();
-    var submit = document.getElementById('test-submit');
-    if (submit) submit.addEventListener('click', function () { setTimeout(report, 0); });
+    // The assessment page announces a submission only after it has been accepted (one window per attempt),
+    // so reporting here cannot run early or twice. `sent` still guards against repeats within this page.
+    document.addEventListener('unfinished:assessment-submitted', function () { report(); });
   }
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init); else init();
 })();
