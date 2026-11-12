@@ -303,7 +303,11 @@
   document.addEventListener('unfinished:exercise-progress', function (e) {
     var d = e.detail;
     if (!d) return;
-    if (IS_ASSESSMENT && d.kind === 'assessment' && typeof d.runId === 'string') progressCheer('assessment', d.runId, d.completed, d.total);
+    if (IS_ASSESSMENT && d.kind === 'assessment' && typeof d.runId === 'string') {
+      // A quiz restored after a refresh reports where it already stood; that is not a new milestone.
+      if (d.initial) exerciseRuns['assessment:' + d.runId] = { half: d.completed >= Math.ceil(d.total / 2), all: d.completed === d.total };
+      else progressCheer('assessment', d.runId, d.completed, d.total);
+    }
     if (IS_LESSON && d.kind === 'lesson') {
       var counts = lessonProgress();
       if (d.initial || d.reset) exerciseRuns['lesson:' + location.pathname] = { half: counts.completed >= Math.ceil(counts.total / 2), all: counts.completed === counts.total };
