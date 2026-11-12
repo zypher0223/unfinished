@@ -40,8 +40,6 @@ body,body.market-body,body.lesson-body,body.folio-catalog{background:#FFFFFF;col
 /* ===== 首页（夜空 + 真实月相） ===== */
 body.d-home{background:var(--d-night);color:var(--d-night-ink);min-height:100vh}
 body.d-home .folio-header{border-bottom:1px solid var(--d-night-line)}
-.d-stars{position:fixed;inset:0;z-index:0;pointer-events:none}
-.d-stars i{position:absolute;border-radius:50%;background:#FFFFFF}
 .d-hero{position:relative;z-index:1;display:flex;flex-wrap:wrap-reverse;align-items:center;gap:40px;padding:48px clamp(16px,5vw,72px) 40px;max-width:1440px;margin:0 auto}
 .d-hero-copy{flex:1 1 420px;min-width:0}
 .d-kicker{margin:0 0 18px;font:500 12px/1.6 var(--sans);letter-spacing:.32em;color:var(--d-night-muted)}
@@ -53,17 +51,11 @@ body.d-home .folio-header{border-bottom:1px solid var(--d-night-line)}
 .d-moon{position:relative;width:min(560px,82vw);aspect-ratio:1;border-radius:50%;overflow:hidden;background:var(--d-night)}
 .d-moon img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;transform:scale(1.012);filter:brightness(1.28) contrast(1.06)}
 .d-moon canvas{position:absolute;inset:0;width:100%;height:100%;display:block}
-.d-doors{position:relative;z-index:1;max-width:1440px;margin:0 auto;padding:0 clamp(16px,5vw,72px) 16px}
-.d-door{display:flex;flex-wrap:wrap;align-items:baseline;gap:6px 48px;padding:24px 8px;border-top:1px solid var(--d-night-line);color:var(--d-night-ink);text-decoration:none;transition:background .25s}
-.d-door:last-child{border-bottom:1px solid var(--d-night-line)}
-.d-door:hover{background:#101219;color:#FFFFFF}
-.d-door h2{margin:0;font:500 clamp(36px,4.6vw,62px)/1.3 var(--serif)}
-.d-door p{flex:1 1 320px;margin:0;font-size:17px;line-height:1.8;color:var(--d-night-muted)}
 .d-foot{position:relative;z-index:1;max-width:1440px;margin:0 auto;padding:16px clamp(16px,5vw,72px) 32px;display:flex;flex-wrap:wrap;justify-content:space-between;gap:8px 32px;font-size:14px;line-height:1.8;color:var(--d-night-muted)}
 .d-foot a{color:var(--d-night-ink)}
 .d-credit{font-size:13px;color:#A3A199}
-@media (prefers-reduced-motion:reduce){.d-door{transition:none}}
-@media (max-width:760px){.night-mark{display:none}.d-hero{padding-top:28px;gap:24px}.d-moon{width:min(300px,78vw)}.d-progress{margin-top:28px}.d-door{padding:18px 4px}}
+
+@media (max-width:760px){.night-mark{display:none}.d-hero{padding-top:28px;gap:24px}.d-moon{width:min(300px,78vw)}.d-progress{margin-top:28px}}
 
 /* ===== 我的学习：课程索引（夜空色块） ===== */
 .d-index{background:var(--d-night);color:var(--d-night-ink);padding:32px clamp(16px,4vw,48px) 28px;margin:0 0 36px}
@@ -124,3 +116,48 @@ html.paper-book .lesson-content,html.paper-book .folio-sheet,html.paper-book .st
 .folio-topic[aria-current=true] .folio-topic-name small,.folio-topic[aria-current=true] .folio-topic-meta{color:var(--d-night-muted)}
 .folio-topic[aria-current=true] .folio-dot{background:var(--d-moon);border-color:var(--d-moon)}
 .folio-topic[aria-current=true]:focus-visible{outline-color:var(--d-mark)}
+
+/* ===== 首页星图（assets/home-stars.js 生成）：每颗星是一课，一次只看市场或 Web3 ===== */
+.d-hero{padding-bottom:16px}
+@media (min-width:761px){.d-hero{padding-top:28px;gap:24px 40px}.d-moon{width:min(380px,82vw)}.d-progress{margin-top:28px}}
+.s-wrap{position:relative;z-index:1;max-width:1440px;margin:0 auto;padding:0 clamp(16px,5vw,72px)}
+.s-bar{display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:4px 32px;border-bottom:1px solid var(--d-night-line)}
+.s-tabs{display:flex;gap:40px}
+.s-tab{display:flex;align-items:baseline;gap:10px;margin-bottom:-1px;padding:10px 0 12px;border:0;border-bottom:2px solid transparent;background:none;color:var(--d-night-muted);cursor:pointer}
+.s-tab b{font:500 30px/1.3 var(--serif)}
+.s-tab span,.s-lab{font:400 13px/1.4 ui-monospace,"SF Mono",Menlo,Consolas,monospace}
+.s-tab:hover{color:#FFFFFF}
+.s-tab[aria-selected=true]{color:var(--d-night-ink);border-bottom-color:var(--d-moon)}
+.s-all{min-height:44px;padding:0 4px;border:0;background:none;color:var(--d-moon);font-size:14px;text-decoration:underline;text-underline-offset:4px;cursor:pointer}
+.s-map{position:relative;margin-top:14px;min-height:200px;--mx:-999px;--my:-999px}
+.s-map svg{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}
+.s-lab{position:absolute;margin:0;color:#A3A199;white-space:nowrap;pointer-events:none}
+.s-star{position:absolute;display:block;width:16px;height:16px;margin:-8px 0 0 -8px}
+.s-star i{position:absolute;left:6px;top:6px;width:4px;height:4px;border-radius:50%;background:#5F626C;transition:transform .15s}
+.s-star.read i{background:#B8AD8E}
+.s-star.w i{left:4px;top:4px;width:8px;height:8px;border-radius:1px;background:#3D5370}
+.s-star.w.read i{background:#B8AD8E}
+.s-star:hover i,.s-star:focus-visible i{transform:scale(2.2);background:#FFFFFF}
+.s-star.w:hover i,.s-star.w:focus-visible i{transform:scale(1.5)}
+.s-star:focus-visible{outline:1px solid var(--d-moon);outline-offset:2px}
+.s-lit{position:absolute;inset:0;pointer-events:none;-webkit-mask-image:radial-gradient(circle 200px at var(--mx) var(--my),#000 0,#000 30%,transparent 100%);mask-image:radial-gradient(circle 200px at var(--mx) var(--my),#000 0,#000 30%,transparent 100%)}
+.s-lit.all{-webkit-mask-image:none;mask-image:none}
+.s-g{position:absolute;width:6px;height:6px;margin:-3px 0 0 -3px;border-radius:50%;background:#FFFFFF;box-shadow:0 0 8px rgba(255,255,255,.5)}
+.s-g.read{background:var(--d-moon);box-shadow:0 0 10px rgba(239,227,196,.7)}
+.s-g.w{width:10px;height:10px;margin:-5px 0 0 -5px;border-radius:1px;background:#9FC2E8;box-shadow:0 0 8px rgba(159,194,232,.55)}
+.s-g.w.read{background:var(--d-moon);box-shadow:0 0 10px rgba(239,227,196,.7)}
+.s-pulse{position:absolute;inset:0;pointer-events:none}
+.s-blk{position:absolute;width:10px;height:10px;margin:-5px 0 0 -5px;border-radius:1px;background:#FFFFFF;opacity:0;animation:s-confirm 8.75s linear infinite}
+@keyframes s-confirm{0%{opacity:0}1.5%{opacity:.95}7%{opacity:0}100%{opacity:0}}
+.s-tip{position:absolute;z-index:6;pointer-events:none;width:max-content;max-width:min(320px,80vw);background:var(--d-moon);color:#14161E;padding:8px 14px;font-size:15px;line-height:1.5}
+.s-tip b{display:block;font-weight:500}
+.s-tip small{font-size:13px;color:#40433F}
+.s-foot{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:baseline;gap:4px 32px;margin-top:14px;padding-top:12px;border-top:1px solid var(--d-night-line)}
+.s-foot p{margin:0;font-size:16px;line-height:1.8;color:var(--d-night-muted)}
+.s-links{display:flex;flex-wrap:wrap;gap:0 28px}
+.s-links a{padding:10px 0;color:var(--d-night-ink);text-decoration:underline;text-underline-offset:4px}
+.s-links a:hover{color:#FFFFFF}
+.s-hint{margin:6px 0 0;font-size:14px;line-height:1.8;color:var(--d-night-muted)}
+@media (prefers-reduced-motion:reduce){.s-blk{animation:none}.s-star i{transition:none}}
+@media (max-width:760px){.s-tabs{gap:28px}.s-tab b{font-size:26px}}
+html[lang=en] .d-hero h1{white-space:normal;font-size:clamp(40px,5vw,72px)}
