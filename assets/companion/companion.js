@@ -18,7 +18,7 @@
     asleep: 'sleeping by your choice', napping: 'having a little nap', awake: 'studying with you',
     selfcheck: 'Mark this exercise complete', selfcheckDone: 'Exercise marked complete',
     selfcheckHelp: 'Mark after trying it yourself. Opening the answer does not mark completion or correctness.',
-    exerciseProgress: 'Exercises completed: {n} / {total}',
+    exerciseProgress: 'Page exercises completed: {n} / {total}',
     sleepHelp: 'Sleep keeps her quiet until you wake her. During a natural nap, halfway and full exercise milestones can wake her to cheer you on.',
     settings: 'Settings', settingsTitle: 'Site settings', close: 'Close',
     compTitle: 'Study buddy', compToggle: 'Show Yue Weiyang on lesson pages',
@@ -35,7 +35,7 @@
     asleep: '你让我睡觉啦', napping: '正在小憩', awake: '正在陪你学习',
     selfcheck: '标记这题已完成', selfcheckDone: '这题已标记完成',
     selfcheckHelp: '自己想过后再标记；展开答案不计作完成，标记也不代表答对。',
-    exerciseProgress: '本页自测已完成 {n} / {total}',
+    exerciseProgress: '本页练习已完成 {n} / {total}',
     sleepHelp: '点“睡觉”后，她会安静到你唤醒为止。自然小憩时，完成半数或全部题目会叫醒她来给你鼓劲。',
     settings: '设置', settingsTitle: '网站设置', close: '关闭',
     compTitle: '学习陪伴', compToggle: '在课程页显示月未央',
@@ -57,7 +57,7 @@
     m5: ['happy', 'Five minutes together! Thanks for giving this idea some time. Shall we take the next little step?'],
     m20: ['happy', 'Twenty minutes now. Ahem, that patient effort deserves a cheer. A short break is welcome too.'],
     halfWake: ['happy', 'Hmm, I’m up! Half the self-checks are complete? Yay! That calls for a little cheer.'],
-    allWake: ['happy', 'Every self-check marked complete! I can’t give that effort a proper cheer lying down. Up I get! Let’s revisit the explanations.'],
+    allWake: ['happy', 'Every exercise complete! I can’t give that effort a proper cheer lying down. Up I get! Let’s revisit the explanations.'],
     testHalfWake: ['happy', 'I’m up! You’ve answered {n} questions — halfway already! Yay, that steady effort deserves a cheer.'],
     testAllWake: ['happy', 'All {n} questions answered! Up I get to cheer your persistence. Submit when ready, then revisit the reasoning.'],
     half: ['happy', 'Half the exercises are complete! Yay! Ahem, that little milestone deserves a proper cheer. Let’s take the rest one at a time.'],
@@ -87,11 +87,11 @@
     m5: ['happy', '咱们一起学了 5 分钟啦！肯花时间弄懂一件事，这个开头很棒。下一小步也一起走，好不好？'],
     m20: ['happy', '已经学了 20 分钟啦。咳，这份耐心我有看到，给你认真鼓鼓掌！想歇一会儿也可以哦。'],
     halfWake: ['happy', '唔，醒啦！这页自测已经完成一半了？好耶，得起来给你鼓鼓劲。后面咱们慢慢来。'],
-    allWake: ['happy', '诶，整页自测都标记完成啦！这可不能躺着夸，起来给你的坚持鼓鼓掌。接着回看解析吧。'],
+    allWake: ['happy', '诶，这页的练习都完成啦！这可不能躺着夸，起来给你的坚持鼓鼓掌。接着回看解析吧。'],
     testHalfWake: ['happy', '唔，醒啦！已经答了 {n} 题，走到一半啦！这个进展得起来夸一下，后面咱们一题一题来。'],
     testAllWake: ['happy', '{n} 题都作答了，好耶！这可不能躺着夸，我起来给你的坚持鼓鼓掌。准备好就交卷，再回头看看判断理由吧。'],
     half: ['happy', '这页的自测已经完成一半啦，好耶！咳，这个小进展得认真夸一下。后面咱们也一题一题来。'],
-    all: ['happy', '整页自测都标记完成啦，好耶！这份耐心值得好好夸一下，接着回看解析，把还没接上的地方找出来吧。'],
+    all: ['happy', '这页的练习都完成啦，好耶！这份耐心值得好好夸一下，接着回看解析，把还没接上的地方找出来吧。'],
     testHalf: ['happy', '已经答了 {n} 题，走到一半啦！咳，这份耐心值得夸一下，后面也一题一题慢慢来。'],
     testAll: ['happy', '{n} 题都作答了，好耶！认真走到这里，这份坚持很棒。准备好就交卷，咱们再回头看看判断理由。'],
     hiNight: ['happy', '夜班开始！咳，今天有认真备课的。今晚咱们一起学哪一课？'],
@@ -302,29 +302,41 @@
   }
   document.addEventListener('unfinished:exercise-progress', function (e) {
     var d = e.detail;
-    if (!IS_ASSESSMENT || !d || d.kind !== 'assessment' || typeof d.runId !== 'string') return;
-    progressCheer('assessment', d.runId, d.completed, d.total);
+    if (!d) return;
+    if (IS_ASSESSMENT && d.kind === 'assessment' && typeof d.runId === 'string') progressCheer('assessment', d.runId, d.completed, d.total);
+    if (IS_LESSON && d.kind === 'lesson') {
+      var counts = lessonProgress();
+      if (d.initial || d.reset) exerciseRuns['lesson:' + location.pathname] = { half: counts.completed >= Math.ceil(counts.total / 2), all: counts.completed === counts.total };
+      else progressCheer('lesson', location.pathname, counts.completed, counts.total);
+      lessonChecks.forEach(function (detail) { if (detail.__ucpRefresh) detail.__ucpRefresh(); });
+    }
   });
 
+  function lessonProgress() {
+    var quiz = document.querySelector('[data-lesson-practice]');
+    var total = quiz ? Number(quiz.getAttribute('data-practice-total')) || 0 : 0;
+    var completed = quiz ? Number(quiz.getAttribute('data-practice-completed')) || 0 : 0;
+    return { total: lessonChecks.length + total, completed: lessonChecks.filter(function (_, i) { return pageProgress && pageProgress.checks[i] === true; }).length + completed };
+  }
   function initLessonChecks() {
     if (!IS_LESSON) return;
     // Self-checks only: raw chart data, platform instructions and book excerpts are not questions.
     lessonChecks = Array.prototype.slice.call(document.querySelectorAll('#practice details, .figure-box > details:not(.candle-data)'));
-    if (!lessonChecks.length) return;
+    if (!lessonChecks.length && !document.querySelector('[data-lesson-practice]')) return;
     var all = load(PROGRESS_KEY, {}); pageProgress = all[location.pathname] || { checks: {} };
     if (!pageProgress.checks || typeof pageProgress.checks !== 'object') pageProgress = { checks: {} };
-    function count() { return lessonChecks.filter(function (_, i) { return pageProgress.checks[i] === true; }).length; }
-    var initial = count(), key = 'lesson:' + location.pathname;
-    exerciseRuns[key] = { half: initial >= Math.ceil(lessonChecks.length / 2), all: initial === lessonChecks.length };
+    function count() { return lessonProgress().completed; }
+    var initial = count(), total = lessonProgress().total, key = 'lesson:' + location.pathname;
+    exerciseRuns[key] = { half: initial >= Math.ceil(total / 2), all: initial === total };
     lessonChecks.forEach(function (detail, i) {
       var button = h('button', { type: 'button', class: 'ucp-check-button', 'aria-pressed': String(pageProgress.checks[i] === true) });
       var status = h('span', { class: 'ucp-check-progress', role: 'status' });
-      function refresh() { button.textContent = pageProgress.checks[i] === true ? T.selfcheckDone : T.selfcheck; button.setAttribute('aria-pressed', String(pageProgress.checks[i] === true)); status.textContent = T.exerciseProgress.replace('{n}', count()).replace('{total}', lessonChecks.length); }
+      function refresh() { button.textContent = pageProgress.checks[i] === true ? T.selfcheckDone : T.selfcheck; button.setAttribute('aria-pressed', String(pageProgress.checks[i] === true)); status.textContent = T.exerciseProgress.replace('{n}', count()).replace('{total}', total); }
       button.addEventListener('click', function () {
         pageProgress.checks[i] = pageProgress.checks[i] !== true;
         var latest = load(PROGRESS_KEY, {}); latest[location.pathname] = pageProgress; save(PROGRESS_KEY, latest);
         lessonChecks.forEach(function (d) { if (d.__ucpRefresh) d.__ucpRefresh(); });
-        progressCheer('lesson', location.pathname, count(), lessonChecks.length);
+        progressCheer('lesson', location.pathname, count(), total);
       });
       detail.__ucpRefresh = refresh;
       detail.appendChild(h('div', { class: 'ucp-check-actions' }, [button, status, h('p', { class: 'ucp-check-help', text: T.selfcheckHelp })]));
@@ -333,7 +345,7 @@
   }
   function initReading() {
     if (!IS_LESSON || !('IntersectionObserver' in window)) return;
-    readingSections = Array.prototype.slice.call(document.querySelectorAll('main .lesson-section:not(#references):not(#platforms):not(#book):not(#origin):not(#history)'));
+    readingSections = Array.prototype.slice.call(document.querySelectorAll('main .lesson-section:not(.lesson-practice):not(#references):not(#platforms):not(#book):not(#origin):not(#history)'));
     if (!readingSections.length) return;
     var observer = new IntersectionObserver(function (entries) {
       entries.forEach(function (entry) {

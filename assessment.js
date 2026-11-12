@@ -34,4 +34,4 @@ document.getElementById('test-form').addEventListener('submit',event=>{event.pre
 document.getElementById('question-prev').addEventListener('click',()=>{if(attempt.index>0){attempt.index--;renderQuestion();}});document.getElementById('question-next').addEventListener('click',()=>{if(attempt.index<11){attempt.index++;renderQuestion();}});
 document.getElementById('test-submit').addEventListener('click',finishTest);document.getElementById('test-exit').addEventListener('click',showSetup);showHistory();
 
-const requestedScope=new URLSearchParams(location.search).get('scope');if(['information','market','all','indicator','tool','method'].includes(requestedScope)){document.querySelector(`input[name=scope][value=${requestedScope}]`).checked=true;}
+const requestedScope=new URLSearchParams(location.search).get('scope');if(Object.prototype.hasOwnProperty.call(testNames,requestedScope)){document.querySelector(`input[name=scope][value=${requestedScope}]`).checked=true;}
