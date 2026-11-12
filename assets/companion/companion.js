@@ -370,7 +370,7 @@
       [T.total, h('b'), function (s) { return fmtTotal(s.total); }]
     ];
     card = h('div', { class: 'ucp-card', hidden: true }, [
-      h('div', { class: 'ucp-card-head' }, [h('strong', { text: T.name }), stateLine]),
+      h('div', { class: 'ucp-card-head' }, [h('div', { class: 'ucp-card-identity' }, [h('strong', { text: T.name }), stateLine]), sleepBtn]),
       h('p', { class: 'ucp-help', text: T.sleepHelp }),
       h('dl', { class: 'ucp-grid' }, cardStats.map(function (r) { return h('div', null, [h('dt', { text: r[0] }), h('dd', null, [r[1]])]); })),
       h('div', { class: 'ucp-actions' }, [
@@ -378,7 +378,7 @@
         h('button', { type: 'button', class: 'ucp-ghost', text: T.openSettings, onclick: function () { card.hidden = true; me.setAttribute('aria-expanded', 'false'); openSettings(); } })
       ])
     ]);
-    box = h('aside', { class: 'ucp' + (REDUCED ? ' is-still' : ''), 'aria-label': T.name + ' · ' + T.compTitle }, [bubble, card, h('div', { class: 'ucp-controls' }, [sleepBtn, me])]);
+    box = h('aside', { class: 'ucp' + (REDUCED ? ' is-still' : ''), 'aria-label': T.name + ' · ' + T.compTitle }, [bubble, card, h('div', { class: 'ucp-controls' }, [me])]);
     document.body.appendChild(box); setMood(restMood());
     document.addEventListener('keydown', function (e) { if (e.key === 'Escape' && card && !card.hidden) { card.hidden = true; me.setAttribute('aria-expanded', 'false'); } });
     document.addEventListener('click', function (e) {
