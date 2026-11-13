@@ -1,6 +1,7 @@
 /* 未尽 · 学习小结（2026-11-13）
  * 只读本机记录，不联网：今天和近 7 天里标记已学了几课、作答了几题、答对几题、把几道旧错题答对了、有效学习多少分钟。
  * 数据来源：market-learning-v1 的 growth.events（作答事件）和 courses[].doneAt；unfinished.study.v1 的每天秒数。
+ * 作答事件按日期保留（最近 10 个自然日内全部保留，不按条数截断），所以今天和近 7 天的数字不会因为做得多而少算。
  * 这些记录从本功能上线后才开始积累，不回填以前的学习，也不做“比上周进步多少”这类没有依据的比较。 */
 (function () {
   'use strict';
@@ -12,10 +13,12 @@
     var out = { today: { read: 0, answered: 0, right: 0, fixed: 0, minutes: 0 }, week: { read: 0, answered: 0, right: 0, fixed: 0, minutes: 0 }, firstEvent: null, events: 0 };
     function add(key, field, n) { if (key === today) out.today[field] += n; if (days[key]) out.week[field] += n; }
     var events = learning && learning.growth && Array.isArray(learning.growth.events) ? learning.growth.events : [];
+    var since = learning && learning.growth && typeof learning.growth.since === 'string' && !isNaN(Date.parse(learning.growth.since)) ? learning.growth.since : null;
+    if (since) out.firstEvent = since; // 较早的事件按日期清理后，最早记录时间保存在 since 里
     events.forEach(function (e) {
       if (!e || typeof e.t !== 'string' || isNaN(Date.parse(e.t)) || ['right', 'wrong', 'fix'].indexOf(e.r) < 0) return;
       var k = dayKey(new Date(e.t)); out.events++;
-      if (!out.firstEvent || e.t < out.firstEvent) out.firstEvent = e.t;
+      if (!out.firstEvent || Date.parse(e.t) < Date.parse(out.firstEvent)) out.firstEvent = e.t;
       add(k, 'answered', 1); if (e.r !== 'wrong') add(k, 'right', 1); if (e.r === 'fix') add(k, 'fixed', 1);
     });
     var courses = learning && learning.courses && typeof learning.courses === 'object' ? learning.courses : {};
@@ -66,12 +69,13 @@
       host.appendChild(h('p', { class: 'practice-note', text: T.note }));
     }
     host.appendChild(h('p', { class: 'practice-note', text: s.firstEvent ? T.since.replace('{d}', new Date(s.firstEvent).toLocaleDateString(EN ? 'en' : 'zh-CN')) : T.sinceNone }));
-    if (s.events) {
+    if (s.events || s.firstEvent) {
       var btn = h('button', { type: 'button', class: 'practice-reset', id: 'growth-clear', text: armed ? T.sure : T.clear });
       btn.addEventListener('click', function () {
         if (!armed) { armed = true; btn.textContent = T.sure; return; }
-        armed = false; status.textContent = window.LearningStore && LearningStore.available() ? T.cleared : T.blocked;
-        LearningStore.write(function (st) { if (st.growth && typeof st.growth === 'object') st.growth.events = []; });
+        armed = false;
+        LearningStore.write(function (st) { if (st.growth && typeof st.growth === 'object') { st.growth.events = []; delete st.growth.since; } });
+        status.textContent = LearningStore.saved() ? T.cleared : T.blocked; render();
       });
       host.appendChild(btn);
     }

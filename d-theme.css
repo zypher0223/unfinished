@@ -197,4 +197,9 @@ html[lang=en] .d-hero h1{white-space:normal;font-size:clamp(40px,5vw,72px)}
 .growth-table thead th{font-weight:600}
 .growth-status{min-height:1.6em;line-height:1.7}
 .result-fixed{font-weight:600}
+.result-unsaved{margin:14px 0;padding:14px 18px;border:2px solid #A23B2A;background:rgba(162,59,42,.06)}
+.result-unsaved p{margin:4px 0;line-height:1.8}
+.result-unsaved-title{font-weight:600}
+.result-saved{font-weight:600}
+#test-save-state:focus{outline:none}
 .ucp-pace-title{margin:14px 0 8px;font-size:14px;font-weight:600}

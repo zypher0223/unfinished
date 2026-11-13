@@ -4,8 +4,8 @@
  * 也不打包整份 localStorage。恢复默认合并：不清空本机记录，重复导入同一份文件结果不变。 */
 (function () {
   'use strict';
-  var FORMAT = 'unfinished-learning-backup', VERSION = 2, // 2：增加作答小结（growth）、已学时间（doneAt）、提醒频率；版本 1 的文件照常可读
-       MAX_BYTES = 2 * 1024 * 1024;
+  var FORMAT = 'unfinished-learning-backup', VERSION = 3, // 2：增加作答小结（growth）、已学时间（doneAt）、提醒频率；3：作答小结按日期保留（不再只留 400 条），增加最早记录时间 since。版本 1、2 的文件照常可读
+       MAX_BYTES = 8 * 1024 * 1024, KEEP_DAYS = 10; // KEEP_DAYS 与 learning-store.js 一致
   var KEYS = { learning: 'market-learning-v1', study: 'unfinished.study.v1', checks: 'unfinished.companion.progress.v1', lastTest: 'market-last-assessment', settings: 'unfinished.settings.v1' };
   var SCOPES = ['indicator', 'tool', 'method', 'all', 'information', 'market', 'basics', 'crypto', 'options', 'frontier', 'career', 'ecosystem'];
   var LEVELS = ['beginner', 'advanced'], DAY_FLAGS = ['d30', 'd60', 'd120'];
@@ -15,12 +15,15 @@
   function isInt(v, lo, hi) { return Number.isInteger(v) && v >= lo && v <= hi; }
   function isNum(v, lo, hi) { return typeof v === 'number' && isFinite(v) && v >= lo && v <= hi; }
   function newer(a, b) { return isDate(a) && isDate(b) ? Date.parse(a) > Date.parse(b) : false; }
+  /* 作答小结保留范围的起点：今天往前共 KEEP_DAYS 个自然日（与 learning-store.js 的规则相同）。 */
+  function cutoff(now) { var n = now ? new Date(now) : new Date(); if (isNaN(n.getTime())) n = new Date(); return new Date(n.getFullYear(), n.getMonth(), n.getDate() - KEEP_DAYS + 1).getTime(); }
+  function earliest(a, b) { if (!isDate(a)) return isDate(b) ? b : null; if (!isDate(b)) return a; return Date.parse(b) < Date.parse(a) ? b : a; }
   function fail(code, where) { var e = new Error(code); e.code = code; e.where = where || ''; throw e; }
 
   /* 把一份数据整理成只含白名单字段的形状。strict=true（导入）时类型不对就报错；
    * strict=false（导出）时悄悄丢掉不合规的条目。课程、题目已不存在的条目计入 skipped。 */
   function sanitize(src, ctx, strict) {
-    var skipped = 0, out = { learning: { courses: {}, wrong: {}, cases: {}, practice: {}, positions: {}, growth: [], last: null }, study: { d: {}, total: 0, k: {}, f: {} }, selfChecks: {}, lastAssessment: null, preferences: {} };
+    var skipped = 0, out = { learning: { courses: {}, wrong: {}, cases: {}, practice: {}, positions: {}, growth: [], growthSince: null, last: null }, study: { d: {}, total: 0, k: {}, f: {} }, selfChecks: {}, lastAssessment: null, preferences: {} };
     function bad(where) { if (strict) fail('bad-entry', where); return false; }
     function section(parent, name, where) { var v = parent[name]; if (v == null) return {}; if (!isObj(v)) { if (strict) fail('bad-section', where); return {}; } return v; }
     var L = section(src, 'learning', 'learning'), k, v, o;
@@ -60,12 +63,14 @@
     // 作答小结事件：只有题号、结果、来源、时间；题目已不存在的跳过。
     var G = L.growth == null ? {} : L.growth, ev = Array.isArray(G) ? G : (isObj(G) ? G.events : null), seen = {};
     if (L.growth != null && !isObj(G) && !Array.isArray(G)) bad('learning.growth');
-    if (ev != null && !Array.isArray(ev)) bad('learning.growth'); else (ev || []).slice(-400).forEach(function (e) {
+    if (ev != null && !Array.isArray(ev)) bad('learning.growth'); else (ev || []).forEach(function (e) {
       if (!isObj(e) || typeof e.id !== 'string' || e.id.length > 160 || typeof e.q !== 'string' || ['right', 'wrong', 'fix'].indexOf(e.r) < 0 || ['lesson', 'review', 'test', 'case', 'other'].indexOf(e.src) < 0 || !isDate(e.t) || (e.topic != null && typeof e.topic !== 'string')) { bad('learning.growth'); return; }
       if (!own(ctx.questionIds, e.q) && !own(ctx.caseOptions, e.q)) { skipped++; return; }
       if (seen[e.id]) return; seen[e.id] = true;
       var item = { id: e.id, t: e.t, q: e.q, r: e.r, src: e.src }; if (e.topic && ctx.courseKeys[e.topic]) item.topic = e.topic; out.learning.growth.push(item);
     });
+    if (isObj(G) && G.since != null) { if (isDate(G.since)) out.learning.growthSince = G.since; else bad('learning.growth.since'); }
+    out.learning.growth.forEach(function (e) { out.learning.growthSince = earliest(out.learning.growthSince, e.t); });
     if (L.last != null) { if (typeof L.last !== 'string') bad('learning.last'); else if (ctx.courseKeys[L.last]) out.learning.last = L.last; else skipped++; }
 
     var S = section(src, 'study', 'study'), days = section(S, 'd', 'study.d'), per = section(S, 'k', 'study.k'), flags = section(S, 'f', 'study.f');
@@ -98,7 +103,9 @@
   function collect(raw, ctx, now) {
     var settings = isObj(raw.settings) ? raw.settings : {};
     var clean = sanitize({ learning: raw.learning || {}, study: raw.study || {}, selfChecks: raw.checks || {}, lastAssessment: raw.lastTest, preferences: { lang: settings.lang, paper: settings.paper, companion: settings.companion, companionSleep: settings.companionSleep, companionPace: settings.companionPace } }, ctx, false).data;
-    return { format: FORMAT, version: VERSION, exportedAt: now, site: '未尽 UNFINISHED', learning: Object.assign({}, clean.learning, { growth: { events: clean.learning.growth } }), study: clean.study, selfChecks: clean.selfChecks, lastAssessment: clean.lastAssessment, preferences: clean.preferences };
+    var cut = cutoff(now), growth = { events: clean.learning.growth.filter(function (e) { return Date.parse(e.t) >= cut; }) }; if (clean.learning.growthSince) growth.since = clean.learning.growthSince;
+    delete clean.learning.growthSince;
+    return { format: FORMAT, version: VERSION, exportedAt: now, site: '未尽 UNFINISHED', learning: Object.assign({}, clean.learning, { growth: growth }), study: clean.study, selfChecks: clean.selfChecks, lastAssessment: clean.lastAssessment, preferences: clean.preferences };
   }
   /* 读文件文字 → 校验后的数据。出错时抛出带 code 的 Error，不改任何记录。 */
   function parse(text, ctx) {
@@ -149,11 +156,15 @@
     }
     for (k in data.learning.positions) { if (!isObj(L.positions[k]) || newer(data.learning.positions[k].date, L.positions[k].date)) { L.positions[k] = data.learning.positions[k]; sum.positions++; } }
     // 作答小结：按事件编号合并，同一事件只留一份；导入不会触发任何鼓励。
-    if (data.learning.growth.length) {
+    // 只保留统计窗口内的事件（按日期，不按条数）；更早的不导入，但最早记录时间照常合并。重复导入结果不变。
+    if (data.learning.growth.length || data.learning.growthSince) {
       if (!isObj(L.growth)) L.growth = { v: 1, events: [] }; if (!Array.isArray(L.growth.events)) L.growth.events = [];
-      var have = {}; L.growth.events.forEach(function (e) { if (e && e.id) have[e.id] = true; });
-      data.learning.growth.forEach(function (e) { if (!have[e.id]) { have[e.id] = true; L.growth.events.push(e); sum.growth++; } });
-      if (sum.growth) { L.growth.events.sort(function (x, y) { return String(x.t) < String(y.t) ? -1 : String(x.t) > String(y.t) ? 1 : 0; }); if (L.growth.events.length > 400) L.growth.events = L.growth.events.slice(-400); }
+      var cut = cutoff(opt && opt.now), have = {}, since = earliest(L.growth.since, data.learning.growthSince);
+      L.growth.events.forEach(function (e) { if (e && e.id) have[e.id] = true; if (e) since = earliest(since, e.t); });
+      data.learning.growth.forEach(function (e) { if (!have[e.id] && Date.parse(e.t) >= cut) { have[e.id] = true; L.growth.events.push(e); sum.growth++; } });
+      L.growth.events = L.growth.events.filter(function (e) { return e && isDate(e.t) && Date.parse(e.t) >= cut; });
+      L.growth.events.sort(function (x, y) { return Date.parse(x.t) - Date.parse(y.t); });
+      if (since) L.growth.since = since;
     }
     if (!L.last && data.learning.last) L.last = data.learning.last;
     var before = typeof S.total === 'number' ? S.total : 0, total = 0;
@@ -192,7 +203,7 @@
     confirm: 'Restore', cancel: 'Cancel', ok: 'Restored. Your progress, mistakes and study time on this page are up to date.', okPrefs: ' Preference changes apply after you reload the page.',
     blocked: 'This browser is blocking storage, so a restore cannot be saved. Allow site data for this site (or leave private mode), then try again. Export still works for what is on this page.',
     writeFail: 'The record could not be saved (storage is full or blocked). Nothing was changed. Free some space or allow site data, then try again.',
-    err: { empty: 'The file is empty.', 'too-big': 'The file is larger than 2 MB, which is not a backup from this site.', 'not-json': 'The file is not valid JSON. It may be damaged or not a backup from this site.', 'not-backup': 'This is not a learning-record backup from this site.', 'newer-version': 'This backup was made by a newer version of the site. Reload this page to get the latest version, then try again.', 'bad-entry': 'The file has an entry in an unexpected format ({w}). Nothing was changed.', 'bad-section': 'The file has a section in an unexpected format ({w}). Nothing was changed.', read: 'The file could not be read. Choose it again.' },
+    err: { empty: 'The file is empty.', 'too-big': 'The file is larger than 8 MB, which is not a backup from this site.', 'not-json': 'The file is not valid JSON. It may be damaged or not a backup from this site.', 'not-backup': 'This is not a learning-record backup from this site.', 'newer-version': 'This backup was made by a newer version of the site. Reload this page to get the latest version, then try again.', 'bad-entry': 'The file has an entry in an unexpected format ({w}). Nothing was changed.', 'bad-section': 'The file has a section in an unexpected format ({w}). Nothing was changed.', read: 'The file could not be read. Choose it again.' },
     untouched: 'Your current record was not changed.'
   } : {
     intro: '学习记录只保存在当前浏览器。导出成文件可以留一份备份，或搬到另一个浏览器。不会上传到任何地方。',
@@ -207,7 +218,7 @@
     confirm: '确认恢复', cancel: '取消', ok: '已恢复。本页的课程进度、错题和学习时长已更新。', okPrefs: '偏好的改动在刷新页面后生效。',
     blocked: '当前浏览器阻止了存储，恢复的内容无法保存。请允许本站保存数据（或退出无痕模式）后再试。导出仍可用于本页已有的内容。',
     writeFail: '记录没能保存（存储空间已满或被阻止），没有改动任何内容。请清理空间或允许本站保存数据后再试。',
-    err: { empty: '文件是空的。', 'too-big': '文件超过 2 MB，不是本站导出的备份。', 'not-json': '文件不是有效的 JSON，可能已损坏，或不是本站导出的备份。', 'not-backup': '这不是本站导出的学习记录备份。', 'newer-version': '这份备份来自更新版本的网站。请刷新本页拿到最新版本后再试。', 'bad-entry': '文件里有一条记录格式不对（{w}），没有改动任何内容。', 'bad-section': '文件里有一部分格式不对（{w}），没有改动任何内容。', read: '文件读取失败，请重新选择。' },
+    err: { empty: '文件是空的。', 'too-big': '文件超过 8 MB，不是本站导出的备份。', 'not-json': '文件不是有效的 JSON，可能已损坏，或不是本站导出的备份。', 'not-backup': '这不是本站导出的学习记录备份。', 'newer-version': '这份备份来自更新版本的网站。请刷新本页拿到最新版本后再试。', 'bad-entry': '文件里有一条记录格式不对（{w}），没有改动任何内容。', 'bad-section': '文件里有一部分格式不对（{w}），没有改动任何内容。', read: '文件读取失败，请重新选择。' },
     untouched: '当前记录没有改动。'
   };
   function h(tag, attrs, kids) { var el = document.createElement(tag), k; for (k in (attrs || {})) { if (k === 'text') el.textContent = attrs[k]; else if (attrs[k] === true) el.setAttribute(k, ''); else if (attrs[k] != null && attrs[k] !== false) el.setAttribute(k, attrs[k]); } (kids || []).forEach(function (c) { if (c) el.appendChild(c); }); return el; }

@@ -58,7 +58,7 @@
   });
   hook('MARKET_QUESTIONS', function (q) {
     var miss = 0; (Array.isArray(q) ? q : []).forEach(function (x) {
-      if (x.stemEn) { x.stem = x.stemEn; x.options = x.optionsEn || x.options; x.explanation = x.explanationEn || x.explanation; x.optionExplanations = x.optionExplanationsEn || x.optionExplanations; } else miss++;
+      if (x.stemEn) { x.stemZh = x.stem; x.optionsZh = x.options; /* 保留中文原文：未交卷草稿用它核对题目，切换语言后草稿仍然有效 */ x.stem = x.stemEn; x.options = x.optionsEn || x.options; x.explanation = x.explanationEn || x.explanation; x.optionExplanations = x.optionExplanationsEn || x.optionExplanations; } else miss++;
     });
     window.UNF_QZH = miss; return q;
   });
@@ -82,6 +82,7 @@
     [/^(.+) · (\d+) 项$/, function (m) { return { '数据是什么，市场为什么会有反应': 'What the data is and why markets react', '从图表读懂变化，用练习检验理解': 'Read change on charts, test it with practice', '从宏观指标与 K 线形态，到看懂期权与交易风控': 'From macro indicators and chart patterns to options and risk control', '从公链与钱包，到生态应用、前沿协议与行业岗位': 'From blockchains and wallets to ecosystem apps, frontier protocols and industry roles' }[m[1]] ? { '数据是什么，市场为什么会有反应': 'What the data is and why markets react', '从图表读懂变化，用练习检验理解': 'Read change on charts, test it with practice', '从宏观指标与 K 线形态，到看懂期权与交易风控': 'From macro indicators and chart patterns to options and risk control', '从公链与钱包，到生态应用、前沿协议与行业岗位': 'From blockchains and wallets to ecosystem apps, frontier protocols and industry roles' }[m[1]] + ' · ' + m[2] + ' topics' : null; }],
     [/^已选择：(.+)。简介已更新。$/, function (m) { return 'Selected: ' + (D(m[1]) || m[1]) + '. Overview updated.'; }],
     [/^(.+) · (.+) · 第 (\d+) 题$/, function (m) { return (D(m[1]) || m[1]) + ' · ' + (LV[m[2]] || m[2]) + ' · Question ' + m[3]; }],
+    [/^(.+) · (.+)，12 题已全部作答并交卷，但当时浏览器没能把作答写进本机记录。$/, function (m) { return (D(m[1]) || m[1]) + ' · ' + (LV[m[2]] || m[2]) + ': all 12 questions were answered and submitted, but the browser could not write the answers to its local record at the time.'; }],
     [/^已答 (\d+) \/ (\d+)$/, function (m) { return 'Answered ' + m[1] + ' / ' + m[2]; }],
     [/^第(\d+)题，(.+)$/, function (m) { return 'Question ' + m[1] + ', ' + (m[2] === '未答' ? 'unanswered' : 'answered'); }],
     [/^(.+) · (.+)，已答 (\d+) \/ 12，停在第 (\d+) 题。$/, function (m) { return (D(m[1]) || m[1]) + ' · ' + (LV[m[2]] || m[2]) + ': ' + m[3] + ' of 12 answered, stopped at question ' + m[4] + '.'; }],
