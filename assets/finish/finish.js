@@ -82,6 +82,7 @@
     });
     c.fillStyle = '#5F584D'; c.font = '400 26px ' + SANS; c.fillText(date + ' · ' + T.foot, 80, H - 80);
   }
+  function within(promise, ms, fallback) { return new Promise(function (ok) { var done = false, t = setTimeout(function () { if (!done) { done = true; ok(fallback); } }, ms); promise.then(function (v) { if (!done) { done = true; clearTimeout(t); ok(v); } }, function () { if (!done) { done = true; clearTimeout(t); ok(fallback); } }); }); }
   function loadImage(src) { return new Promise(function (ok) { var i = new Image(); i.onload = function () { ok(i); }; i.onerror = function () { ok(null); }; i.src = src; }); }
   function fonts(texts) { if (!document.fonts || !document.fonts.load) return Promise.resolve(); var all = texts.join(''); return Promise.all([document.fonts.load('700 76px "Noto Serif SC"', all), document.fonts.load('500 36px "Noto Serif SC"', all), document.fonts.load('400 34px "Noto Sans SC"', all), document.fonts.load('700 56px "Noto Sans SC"', all)]).catch(function () {}); }
 
@@ -98,7 +99,8 @@
     function close() { if (pop === panel) pop = null; panel.remove(); document.removeEventListener('keydown', onKey); }
     function onKey(e) { if (e.key === 'Escape') close(); }
     document.addEventListener('keydown', onKey);
-    Promise.all([loadImage(base + 'mascot/happy.webp'), loadAnswers(), fonts([n, T.title, T.foot, T.read, T.quiz, T.time, T.by, date].concat(T.says))]).then(function (r) {
+    // 每项加载都有时限：网络慢或某个请求卡住时，用已有的内容先把图画出来（没等到的字体用系统字体，头像留白，小测按 0 计）。
+    Promise.all([within(loadImage(base + 'mascot/happy.webp'), 6000, null), within(loadAnswers(), 6000, {}), within(fonts([n, T.title, T.foot, T.read, T.quiz, T.time, T.by, date].concat(T.says)), 4000, null)]).then(function (r) {
       if (pop !== panel) return;
       var st = stats(route, LearningStore.read(), readStudy(), r[1]);
       var canvas = el('canvas', { class: 'route-finish-canvas', role: 'img', 'aria-label': fill(T.alt, { name: n, a: st.done, b: st.keys, r: st.right, q: st.total, t: duration(st.secs) }) });
