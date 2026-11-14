@@ -65,6 +65,8 @@
     if(key){var retry=h('button',{type:'button',class:'practice-reset',text:T.retry});retry.addEventListener('click',function(){if(window.LearningStore)LearningStore.write(function(s){if(s.practice)delete s.practice[key];});renderRound(host,questions,key,onFinish);document.dispatchEvent(new CustomEvent('unfinished:exercise-progress',{detail:{kind:'lesson',reset:true,completed:0,total:questions.length,runId:run}}));host.querySelector('input').focus();});host.appendChild(retry);}
     publish(true,false);
   }
+  // 供“今天该复习”（assets/review/review.js）复用同一套作答界面与记录方式。
+  window.UnfinishedPractice={renderRound:renderRound,normalQuestion:normalQuestion};
   var lesson=document.querySelector('[data-lesson-practice]');
   if(lesson){try{var data=JSON.parse(lesson.querySelector('[data-practice-data]').textContent);renderRound(lesson.querySelector('[data-practice-stage]'),data.questions,data.key);}catch(e){lesson.querySelector('[data-practice-stage]').textContent=EN?'The practice could not load. Refresh this page to try again.':'小测暂时未能加载，请刷新页面重试。';}}
   var review=document.querySelector('[data-wrong-practice]');

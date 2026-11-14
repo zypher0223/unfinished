@@ -203,3 +203,11 @@ html[lang=en] .d-hero h1{white-space:normal;font-size:clamp(40px,5vw,72px)}
 .result-saved{font-weight:600}
 #test-save-state:focus{outline:none}
 .ucp-pace-title{margin:14px 0 8px;font-size:14px;font-weight:600}
+
+/* ===== 课程页：本课要点（apply-summary.mjs 生成，2026-11-13） ===== */
+.lesson-summary{border:1px solid var(--d-line);border-left:3px solid var(--d-mark);padding:18px 20px;background:var(--d-soft)}
+.lesson-summary h2{margin-top:0}
+.lesson-summary .summary-line{font-size:1.04em}
+.lesson-summary .summary-line b,.lesson-summary .summary-points b{display:block;font-weight:500;font-size:.82em;letter-spacing:.04em;color:var(--d-muted)}
+.lesson-summary .summary-points{list-style:none;margin:12px 0;padding:0;display:grid;gap:12px}
+.lesson-summary .summary-points li{border-top:1px solid var(--d-line);padding-top:10px;overflow-wrap:anywhere}

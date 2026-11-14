@@ -4,8 +4,8 @@
  * 也不打包整份 localStorage。恢复默认合并：不清空本机记录，重复导入同一份文件结果不变。 */
 (function () {
   'use strict';
-  var FORMAT = 'unfinished-learning-backup', VERSION = 3, // 2：增加作答小结（growth）、已学时间（doneAt）、提醒频率；3：作答小结按日期保留（不再只留 400 条），增加最早记录时间 since。版本 1、2 的文件照常可读
-       MAX_BYTES = 8 * 1024 * 1024, KEEP_DAYS = 10; // KEEP_DAYS 与 learning-store.js 一致
+  var FORMAT = 'unfinished-learning-backup', VERSION = 4, // 2：增加作答小结（growth）、已学时间（doneAt）、提醒频率；3：作答小结按日期保留（不再只留 400 条），增加最早记录时间 since；4：增加到期复习进度（learning.review）。版本 1–3 的文件照常可读
+       MAX_BYTES = 8 * 1024 * 1024, KEEP_DAYS = 10, REVIEW_ROUNDS = 5; // KEEP_DAYS、REVIEW_ROUNDS（复习轮数）与 learning-store.js 一致
   var KEYS = { learning: 'market-learning-v1', study: 'unfinished.study.v1', checks: 'unfinished.companion.progress.v1', lastTest: 'market-last-assessment', settings: 'unfinished.settings.v1' };
   var SCOPES = ['indicator', 'tool', 'method', 'all', 'information', 'market', 'basics', 'crypto', 'options', 'frontier', 'career', 'ecosystem'];
   var LEVELS = ['beginner', 'advanced'], DAY_FLAGS = ['d30', 'd60', 'd120'];
@@ -23,7 +23,7 @@
   /* 把一份数据整理成只含白名单字段的形状。strict=true（导入）时类型不对就报错；
    * strict=false（导出）时悄悄丢掉不合规的条目。课程、题目已不存在的条目计入 skipped。 */
   function sanitize(src, ctx, strict) {
-    var skipped = 0, out = { learning: { courses: {}, wrong: {}, cases: {}, practice: {}, positions: {}, growth: [], growthSince: null, last: null }, study: { d: {}, total: 0, k: {}, f: {} }, selfChecks: {}, lastAssessment: null, preferences: {} };
+    var skipped = 0, out = { learning: { courses: {}, wrong: {}, cases: {}, practice: {}, positions: {}, review: {}, growth: [], growthSince: null, last: null }, study: { d: {}, total: 0, k: {}, f: {} }, selfChecks: {}, lastAssessment: null, preferences: {} };
     function bad(where) { if (strict) fail('bad-entry', where); return false; }
     function section(parent, name, where) { var v = parent[name]; if (v == null) return {}; if (!isObj(v)) { if (strict) fail('bad-section', where); return {}; } return v; }
     var L = section(src, 'learning', 'learning'), k, v, o;
@@ -59,6 +59,15 @@
       if (!ctx.courseKeys[k]) { skipped++; continue; }
       if (!isObj(v) || typeof v.section !== 'string' || !/^[A-Za-z][\w-]{0,59}$/.test(v.section) || !isDate(v.date)) { bad('learning.positions'); continue; }
       out.learning.positions[k] = { section: v.section, date: v.date };
+    }
+    // 到期复习进度（2026-11-13 起）：'q:题号' 或 'l:课程key' → {n: 轮次 0–5, at: 上次复习时间}。题目、课程已不存在的跳过。
+    var review = section(L, 'review', 'learning.review');
+    for (k in review) if (own(review, k)) {
+      v = review[k];
+      var rid = k.slice(2), known = k.indexOf('q:') === 0 ? (own(ctx.questionIds, rid) || own(ctx.caseOptions, rid)) : k.indexOf('l:') === 0 ? !!ctx.courseKeys[rid] : null;
+      if (known === null || !isObj(v) || !isInt(v.n, 0, REVIEW_ROUNDS) || !isDate(v.at)) { bad('learning.review'); continue; }
+      if (!known) { skipped++; continue; }
+      out.learning.review[k] = { n: v.n, at: v.at };
     }
     // 作答小结事件：只有题号、结果、来源、时间；题目已不存在的跳过。
     var G = L.growth == null ? {} : L.growth, ev = Array.isArray(G) ? G : (isObj(G) ? G.events : null), seen = {};
@@ -126,9 +135,9 @@
    * - 学习时长：同一天、同一课取较大值，不相加。 */
   function merge(raw, data, opt) {
     var L = isObj(raw.learning) ? copy(raw.learning) : {}, S = isObj(raw.study) ? copy(raw.study) : {}, C = isObj(raw.checks) ? copy(raw.checks) : {}, k, q;
-    ['courses', 'wrong', 'cases', 'practice', 'positions'].forEach(function (n) { if (!isObj(L[n])) L[n] = {}; });
+    ['courses', 'wrong', 'cases', 'practice', 'positions', 'review'].forEach(function (n) { if (!isObj(L[n])) L[n] = {}; });
     ['d', 'k', 'f'].forEach(function (n) { if (!isObj(S[n])) S[n] = {}; });
-    var sum = { growth: 0, done: 0, saved: 0, wrongNew: [], wrongUpdated: 0, cases: 0, practice: 0, positions: 0, days: 0, seconds: 0, checks: 0, lastTest: false, prefs: [], kept: 0 };
+    var sum = { growth: 0, done: 0, saved: 0, wrongNew: [], wrongUpdated: 0, cases: 0, practice: 0, positions: 0, review: 0, days: 0, seconds: 0, checks: 0, lastTest: false, prefs: [], kept: 0 };
     for (k in data.learning.courses) {
       var b = data.learning.courses[k], a = isObj(L.courses[k]) ? L.courses[k] : (L.courses[k] = {});
       if (b.done && !a.done) { a.done = true; sum.done++; }
@@ -155,6 +164,8 @@
       }
     }
     for (k in data.learning.positions) { if (!isObj(L.positions[k]) || newer(data.learning.positions[k].date, L.positions[k].date)) { L.positions[k] = data.learning.positions[k]; sum.positions++; } }
+    // 复习进度：取上次复习时间较新的一份；时间相同保留本机。
+    for (k in data.learning.review) { var rv = data.learning.review[k], mv = L.review[k]; if (!isObj(mv) || !isDate(mv.at) || newer(rv.at, mv.at)) { L.review[k] = { n: rv.n, at: rv.at }; sum.review++; } }
     // 作答小结：按事件编号合并，同一事件只留一份；导入不会触发任何鼓励。
     // 只保留统计窗口内的事件（按日期，不按条数）；更早的不导入，但最早记录时间照常合并。重复导入结果不变。
     if (data.learning.growth.length || data.learning.growthSince) {
@@ -192,10 +203,10 @@
   var EN = (document.documentElement.lang || '').toLowerCase().indexOf('en') === 0;
   var T = EN ? {
     intro: 'Your learning record lives only in this browser. Export it to a file to keep a copy or move it to another browser. Nothing is uploaded.',
-    exportBtn: 'Export learning record', importBtn: 'Restore from a file…', where: 'The file is saved wherever your browser saves downloads (or the place you choose). It contains lesson marks, saved lessons, mistakes, case answers, lesson quiz answers, the answer history behind the study summary, reading positions and study time. It never contains AI keys or settings from the AI panel.',
+    exportBtn: 'Export learning record', importBtn: 'Restore from a file…', where: 'The file is saved wherever your browser saves downloads (or the place you choose). It contains lesson marks, saved lessons, mistakes, case answers, lesson quiz answers, the answer history behind the study summary, review schedules, reading positions and study time. It never contains AI keys or settings from the AI panel.',
     exported: 'Exported {file}: {a} lessons marked, {b} mistakes, {c} study days.', exportedEmpty: 'Exported {file}. There is no learning record in this browser yet, so the file is nearly empty.',
     preview: 'What this file will restore', from: 'Backup made on {d}.', none: 'Nothing new: everything in this file is already in this browser.',
-    done: '{n} lessons newly marked as read', saved: '{n} lessons newly saved', wrongUpdated: '{n} mistakes updated to the newer record', cases: '{n} case answers', practice: '{n} lesson quiz answers', positions: '{n} reading positions', growth: '{n} answer-history entries for the study summary', days: '{n} new study days', seconds: 'study time grows by {n} min', checks: '{n} self-check marks', lastTest: 'the most recent test score',
+    done: '{n} lessons newly marked as read', saved: '{n} lessons newly saved', wrongUpdated: '{n} mistakes updated to the newer record', cases: '{n} case answers', practice: '{n} lesson quiz answers', positions: '{n} reading positions', review: '{n} review schedules updated', growth: '{n} answer-history entries for the study summary', days: '{n} new study days', seconds: 'study time grows by {n} min', checks: '{n} self-check marks', lastTest: 'the most recent test score',
     rules: 'How conflicts are handled: this browser’s record is never cleared. “Read” and “saved” marks carry no time, so marks already here are kept and missing ones are added. For mistakes and answers, the newer dated record wins. Study time takes the larger value per day rather than adding, so importing the same file twice changes nothing.',
     wrongNew: 'Also add {n} mistakes that are in the file but not in this browser', wrongNote: 'The file cannot tell whether you already reviewed and removed these here. If you did, untick this box.', wrongList: 'Show these questions',
     prefs: 'Also restore interface preferences (language, reading background, companion on/off, sleep and how often she speaks)', skipped: '{n} entries refer to lessons or questions that no longer exist and were skipped.',
@@ -207,10 +218,10 @@
     untouched: 'Your current record was not changed.'
   } : {
     intro: '学习记录只保存在当前浏览器。导出成文件可以留一份备份，或搬到另一个浏览器。不会上传到任何地方。',
-    exportBtn: '导出学习记录', importBtn: '从文件恢复…', where: '文件保存在浏览器的下载位置（或你选择的位置）。里面有：已学和收藏标记、错题、案例作答、课后小测作答、作答小结记录、阅读位置和学习时长。不包含 AI 面板里的密钥和设置。',
+    exportBtn: '导出学习记录', importBtn: '从文件恢复…', where: '文件保存在浏览器的下载位置（或你选择的位置）。里面有：已学和收藏标记、错题、案例作答、课后小测作答、作答小结记录、复习进度、阅读位置和学习时长。不包含 AI 面板里的密钥和设置。',
     exported: '已导出 {file}：{a} 课已学标记、{b} 道错题、{c} 天学习时长。', exportedEmpty: '已导出 {file}。当前浏览器还没有学习记录，所以文件几乎是空的。',
     preview: '这份文件将恢复的内容', from: '备份时间：{d}。', none: '没有新内容：文件里的记录本机都已经有了。',
-    done: '新增 {n} 课“已学”标记', saved: '新增 {n} 课收藏', wrongUpdated: '{n} 道错题更新为较新的记录', cases: '{n} 个案例作答', practice: '{n} 道课后小测作答', positions: '{n} 个阅读位置', growth: '{n} 条作答小结记录', days: '新增 {n} 天学习时长', seconds: '累计学习时长增加 {n} 分钟', checks: '{n} 个自测完成标记', lastTest: '最近一次测验成绩',
+    done: '新增 {n} 课“已学”标记', saved: '新增 {n} 课收藏', wrongUpdated: '{n} 道错题更新为较新的记录', cases: '{n} 个案例作答', practice: '{n} 道课后小测作答', positions: '{n} 个阅读位置', review: '{n} 项复习进度更新', growth: '{n} 条作答小结记录', days: '新增 {n} 天学习时长', seconds: '累计学习时长增加 {n} 分钟', checks: '{n} 个自测完成标记', lastTest: '最近一次测验成绩',
     rules: '冲突怎么处理：本机记录不会被清空。“已学”“收藏”没有记录时间，分不出谁新，所以本机已有的标记保留，缺的补上。错题和作答两边都有日期时取较新的。学习时长同一天取较大值、不相加，所以同一份文件导入两次结果不变。',
     wrongNew: '同时加入 {n} 道“文件里有、本机没有”的错题', wrongNote: '文件无法判断这些题你是不是已经在本机复习并移出了。如果是，请取消勾选。', wrongList: '查看这些题目',
     prefs: '同时恢复界面偏好（语言、阅读背景、伴学开关、睡眠与提醒频率）', skipped: '有 {n} 条记录对应的课程或题目已不存在，已跳过。',
@@ -268,7 +279,7 @@
       var lines = [];
       if (s.done) lines.push(fill(T.done, { n: s.done })); if (s.saved) lines.push(fill(T.saved, { n: s.saved }));
       if (s.wrongUpdated) lines.push(fill(T.wrongUpdated, { n: s.wrongUpdated })); if (s.cases) lines.push(fill(T.cases, { n: s.cases }));
-      if (s.practice) lines.push(fill(T.practice, { n: s.practice })); if (s.positions) lines.push(fill(T.positions, { n: s.positions })); if (s.growth) lines.push(fill(T.growth, { n: s.growth }));
+      if (s.practice) lines.push(fill(T.practice, { n: s.practice })); if (s.positions) lines.push(fill(T.positions, { n: s.positions })); if (s.review) lines.push(fill(T.review, { n: s.review })); if (s.growth) lines.push(fill(T.growth, { n: s.growth }));
       if (s.days) lines.push(fill(T.days, { n: s.days })); if (s.seconds >= 60) lines.push(fill(T.seconds, { n: Math.floor(s.seconds / 60) }));
       if (s.checks) lines.push(fill(T.checks, { n: s.checks })); if (s.lastTest) lines.push(T.lastTest);
       if (!lines.length && !(wrongBox.checked && s.wrongNew.length) && !s.prefs.length) lines.push(T.none);
