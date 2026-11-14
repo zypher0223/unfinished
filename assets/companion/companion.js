@@ -69,6 +69,7 @@
     testHalf: ['happy', 'You’ve answered {n} questions — halfway! Ahem, that steady effort deserves a cheer. Take the rest one at a time.'],
     fix: ['happy', 'You got this one wrong before, and right this time! Hmph, not that I was keeping count… well done.'],
     fixMany: ['happy', '{n} questions you once got wrong are right this time! Ahem, I only happened to notice. Nicely done.'],
+    routeDone: ['happy', 'You finished the whole route “{n}”! Here, I made you a little summary.'],
     testAll: ['happy', 'All {n} questions answered! Yay! That persistence deserves a cheer. Submit when you’re ready, then check the reasoning.'],
     hiNight: ['happy', 'Night shift starts! Ahem, I prepared a little. Which lesson shall we work through?'],
     hiDay: ['sleepy', 'Daytime… hmm, I’m up! Let’s start with one little idea.'],
@@ -101,6 +102,7 @@
     testHalf: ['happy', '已经答了 {n} 题，走到一半啦！咳，这份耐心值得夸一下，后面也一题一题慢慢来。'],
     fix: ['happy', '这道题上次答错，这次答对啦！哼，才不是特意帮你记着的……做得好。'],
     fixMany: ['happy', '有 {n} 道以前答错的题，这次答对了！咳，我只是刚好数了一下。做得好。'],
+    routeDone: ['happy', '“{n}”这条路线你全部读完了！喏，给你做了张小结。'],
     testAll: ['happy', '{n} 题都作答了，好耶！认真走到这里，这份坚持很棒。准备好就交卷，咱们再回头看看判断理由。'],
     hiNight: ['happy', '夜班开始！咳，今天有认真备课的。今晚咱们一起学哪一课？'],
     hiDay: ['sleepy', '白天……唔，我醒啦！先从一个小知识点开始，好不好？'],
@@ -326,6 +328,11 @@
     // If a milestone bubble has just appeared, let it be read first instead of replacing it at once.
     var wait = bubble && !bubble.hidden ? Math.max(0, 6500 - (Date.now() - lastBubble)) : 0;
     clearTimeout(queuedTimer); queuedTimer = setTimeout(function () { say(d.count > 1 ? L.fixMany : L.fix, d.count, true); }, wait);
+  });
+  // 读完一条路线的最后一课（assets/finish/finish.js 发出）。只有这句话真的说出来了才打开小结：关闭、手动睡眠、页面隐藏时都不弹。
+  document.addEventListener('unfinished:route-finished', function (e) {
+    var d = e.detail; if (!d || typeof d.name !== 'string') return;
+    if (say(L.routeDone, d.name, true) && typeof d.accept === 'function') d.accept();
   });
   document.addEventListener('unfinished:exercise-progress', function (e) {
     var d = e.detail;

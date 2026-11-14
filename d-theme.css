@@ -220,3 +220,15 @@ html[lang=en] .d-hero h1{white-space:normal;font-size:clamp(40px,5vw,72px)}
 .lesson-nav b{font-weight:500;font-size:17px;line-height:1.5}
 .lesson-nav-next{text-align:right;align-items:flex-end}
 @media (max-width:650px){.lesson-nav{grid-template-columns:1fr}.lesson-nav-empty{display:none}.lesson-nav-next{text-align:left;align-items:flex-start}}
+
+/* ===== 路线完成小结弹出层（assets/finish/finish.js，贴在伴学上方） ===== */
+.route-finish-pop{position:fixed;right:16px;bottom:216px;z-index:60;width:min(340px,calc(100vw - 32px));max-height:calc(100vh - 232px);overflow:auto;background:var(--paper,#fff);color:var(--d-ink);border:1px solid var(--d-line);box-shadow:0 18px 50px rgba(0,0,0,.28);padding:14px;font:400 14px/1.7 var(--sans)}
+.route-finish-pop canvas{display:block;width:100%;height:auto;border:1px solid var(--d-line);margin:0 0 12px}
+.route-finish-pop .due-actions{display:flex;gap:10px;flex-wrap:wrap}
+.route-finish-pop button{font:inherit;min-height:40px;padding:8px 14px;cursor:pointer;border:1px solid var(--d-ink);background:transparent;color:inherit}
+.route-finish-pop .practice-check{background:var(--d-ink);color:var(--paper,#fff)}
+.route-finish-pop .lesson-note{font-size:12px;color:var(--d-muted);margin:10px 0 0}
+/* 宽屏：放在伴学和气泡的左边，互不遮挡 */
+@media (min-width:760px){.route-finish-pop{right:280px;bottom:88px;max-height:calc(100vh - 108px)}}
+@media (prefers-reduced-motion:no-preference){.route-finish-pop{animation:route-pop .28s ease-out}}
+@keyframes route-pop{from{opacity:0;transform:translateY(16px) scale(.96)}to{opacity:1;transform:none}}

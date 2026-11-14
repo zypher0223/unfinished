@@ -1,32 +1,34 @@
 /* 路线完成小结（2026-11-14，用户选定方案 C：卡通月亮 + 月未央）。
- * “学习路线”里每条路线读完全部课程后，可以生成一张 1200×1500 的图片并保存。图片在本页用 canvas 画出，不上传。
+ * 在课程页点“标记已学”读完一条路线的最后一课时，由伴学（月未央）自动弹出一张 1200×1500 的小结图片，可保存。
+ * 伴学关闭、手动睡眠或本页隐藏时不弹（伴学说了话才打开，见 companion.js 的 unfinished:route-finished）；
+ * 之后可在“学习路线”里已读完的路线下方点“查看完成小结”再看。每条路线只自动弹一次（market-learning-v1 的 finished）。
+ * 图片在本页用 canvas 画出，不上传。路线与课程对应表、题目答案表由 build-extras.mjs 生成（route-keys.js、answers.js）。
  * 数字全部来自本机学习记录：已读课数、这条路线课后小测的答对题数、这些课程的学习时长。只作学习记录，不是证书或能力证明。 */
 (function () {
   'use strict';
-  var routes = window.STUDY_ROUTES || [], bank = window.MARKET_QUESTIONS || [];
-  if (!routes.length || !window.LearningStore || !document.querySelector('details.route')) return;
+  var routes = window.UNF_ROUTE_KEYS || [];
+  if (!routes.length || !window.LearningStore) return;
   var EN = (document.documentElement.lang || '').toLowerCase().indexOf('en') === 0;
   var T = EN ? {
-    make: 'Make my route summary', notYet: 'Finish every lesson on this route to make a summary picture ({a}/{b} read).', save: 'Save picture', close: 'Close', alt: 'Route summary picture: {name}. {a} of {b} lessons read; lesson quizzes {r} of {q} correct; study time {t}.',
+    make: 'View route summary', notYet: 'When you finish every lesson on this route, Yue will bring you a summary picture ({a}/{b} read).', dialog: 'Route summary', save: 'Save picture', close: 'Close', alt: 'Route summary picture: {name}. {a} of {b} lessons read; lesson quizzes {r} of {q} correct; study time {t}.',
     note: 'Made in your browser from this device’s learning record; nothing is uploaded. It is a keepsake of your study, not a certificate or proof of ability.',
     title: 'Route complete!', says: ['You really finished this route!', 'N-not that I was waiting', 'to praise you or anything.'], by: '— Yue Weiyang', read: 'lessons read', quiz: 'lesson quiz correct', time: 'study time on these lessons', foot: 'Learning has no finish line.', h: ' h ', m: ' min', fail: 'The picture could not be made. Refresh the page and try again.'
   } : {
-    make: '生成完成小结', notYet: '读完这条路线的全部课程后，可以生成一张完成小结图片（已读 {a}/{b}）。', save: '保存图片', close: '收起', alt: '路线完成小结图片：{name}。已读 {a} / {b} 课；课后小测答对 {r} / {q} 题；学习时长 {t}。',
+    make: '查看完成小结', notYet: '读完这条路线的全部课程后，月未央会把完成小结送到你面前（已读 {a}/{b}）。', dialog: '路线完成小结', save: '保存图片', close: '收起', alt: '路线完成小结图片：{name}。已读 {a} / {b} 课；课后小测答对 {r} / {q} 题；学习时长 {t}。',
     note: '图片在你的浏览器里按本机学习记录生成，不上传。它是学习的纪念，不是证书，也不代表能力评定。',
     title: '路线完成！', says: ['这条路线你真的走完了！', '才、才不是特意等着夸你的。'], by: '—— 月未央', read: '课已读', quiz: '课后小测答对', time: '这些课的学习时长', foot: '学习没有终点。', h: ' 小时 ', m: ' 分', fail: '图片没能生成，请刷新页面再试。'
   };
   function fill(s, o) { return s.replace(/\{(\w+)\}/g, function (m, k) { return o[k]; }); }
   function el(tag, attrs, kids) { var e = document.createElement(tag); Object.keys(attrs || {}).forEach(function (k) { if (k === 'text') e.textContent = attrs[k]; else e.setAttribute(k, attrs[k]); }); (kids || []).forEach(function (c) { if (c) e.appendChild(c); }); return e; }
-  var byQ = {}; bank.forEach(function (q) { byQ[q.id] = q; });
   var base = ((document.querySelector('script[src*="assets/finish/finish.js"]') || {}).src || '').replace(/finish\/finish\.js.*$/, '');
 
   // 纯计算：一条路线的统计。study 是 unfinished.study.v1 读出的对象（可能为 null）。
-  function stats(route, s, study) {
-    var keys = route.steps.reduce(function (a, x) { return a.concat(x[2]); }, []), done = 0, right = 0, total = 0, secs = 0;
+  function stats(route, s, study, answers) {
+    var keys = route.keys, done = 0, right = 0, total = 0, secs = 0; answers = answers || {};
     keys.forEach(function (k) {
       if (s.courses[k] && s.courses[k].done) done++;
       var pr = s.practice && s.practice[k]; total += 3;
-      if (pr && typeof pr === 'object') Object.keys(pr).forEach(function (id) { var q = byQ[id]; if (q && pr[id] && pr[id].answer === q.answer) right++; });
+      if (pr && typeof pr === 'object') Object.keys(pr).forEach(function (id) { if (Object.prototype.hasOwnProperty.call(answers, id) && pr[id] && pr[id].answer === answers[id]) right++; });
       var t = study && study.k && study.k[k]; if (typeof t === 'number' && t > 0) secs += t;
     });
     return { keys: keys.length, done: done, right: Math.min(right, total), total: total, secs: Math.floor(secs) };
@@ -82,25 +84,52 @@
   function loadImage(src) { return new Promise(function (ok) { var i = new Image(); i.onload = function () { ok(i); }; i.onerror = function () { ok(null); }; i.src = src; }); }
   function fonts(texts) { if (!document.fonts || !document.fonts.load) return Promise.resolve(); var all = texts.join(''); return Promise.all([document.fonts.load('700 76px "Noto Serif SC"', all), document.fonts.load('500 36px "Noto Serif SC"', all), document.fonts.load('400 34px "Noto Sans SC"', all), document.fonts.load('700 56px "Noto Sans SC"', all)]).catch(function () {}); }
 
-  routes.forEach(function (route) {
-    var host = document.getElementById('route-' + route.id); if (!host) return;
-    var box = el('div', { class: 'route-finish', 'data-route-finish': route.id }), hint = el('p', { class: 'practice-note' }), btn = el('button', { type: 'button', class: 'practice-check', text: T.make }), stage = el('div', { class: 'route-finish-stage', hidden: '' });
-    box.appendChild(hint); box.appendChild(btn); box.appendChild(stage); host.appendChild(box);
-    function name() { var s = host.querySelector('summary'); return (s && s.firstChild && s.firstChild.nodeValue || route.name).trim(); }
-    function refresh() { var st = stats(route, LearningStore.read(), null), ok = st.keys > 0 && st.done === st.keys; btn.hidden = !ok; hint.hidden = ok; hint.textContent = fill(T.notYet, { a: st.done, b: st.keys }); if (!ok) { stage.hidden = true; } }
-    btn.addEventListener('click', function () {
-      var st = stats(route, LearningStore.read(), readStudy()), n = name(), now = new Date(), date = EN ? now.toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' }) : now.getFullYear() + ' 年 ' + (now.getMonth() + 1) + ' 月 ' + now.getDate() + ' 日';
-      while (stage.firstChild) stage.removeChild(stage.firstChild); stage.hidden = false;
+  function loadAnswers() { return new Promise(function (ok) { if (window.UNF_ANSWERS) return ok(window.UNF_ANSWERS); var sc = document.createElement('script'); sc.src = base + 'finish/answers.js'; sc.onload = function () { ok(window.UNF_ANSWERS || {}); }; sc.onerror = function () { ok({}); }; document.head.appendChild(sc); }); }
+  function complete(route, s) { return route.keys.length > 0 && route.keys.every(function (k) { return s.courses[k] && s.courses[k].done; }); }
+
+  // 弹出层：贴在伴学上方，不抢焦点，不遮住整页；Esc 或“收起”关闭。
+  var pop = null;
+  function open(route) {
+    if (pop) { pop.remove(); pop = null; }
+    var n = EN ? route.nameEn || route.name : route.name, now = new Date(), date = EN ? now.toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' }) : now.getFullYear() + ' 年 ' + (now.getMonth() + 1) + ' 月 ' + now.getDate() + ' 日';
+    var panel = pop = el('section', { class: 'route-finish-pop', role: 'dialog', 'aria-label': T.dialog + (EN ? ': ' : '：') + n, 'data-route-finish-pop': route.id });
+    document.body.appendChild(panel);
+    function close() { if (pop === panel) pop = null; panel.remove(); document.removeEventListener('keydown', onKey); }
+    function onKey(e) { if (e.key === 'Escape') close(); }
+    document.addEventListener('keydown', onKey);
+    Promise.all([loadImage(base + 'mascot/happy.webp'), loadAnswers(), fonts([n, T.title, T.foot, T.read, T.quiz, T.time, T.by, date].concat(T.says))]).then(function (r) {
+      if (pop !== panel) return;
+      var st = stats(route, LearningStore.read(), readStudy(), r[1]);
       var canvas = el('canvas', { class: 'route-finish-canvas', role: 'img', 'aria-label': fill(T.alt, { name: n, a: st.done, b: st.keys, r: st.right, q: st.total, t: duration(st.secs) }) });
-      Promise.all([loadImage(base + 'mascot/happy.webp'), fonts([n, T.title, T.foot, T.read, T.quiz, T.time, T.by, date].concat(T.says))]).then(function (r) {
-        try { draw(canvas, n, st, r[0], date); } catch (e) { stage.appendChild(el('p', { text: T.fail })); return; }
-        var save = el('button', { type: 'button', class: 'practice-check', text: T.save }), close = el('button', { type: 'button', class: 'practice-reset', text: T.close });
-        save.addEventListener('click', function () { canvas.toBlob(function (b) { if (!b) return; var a = el('a', { href: URL.createObjectURL(b), download: 'unfinished-route-' + route.id + '.png' }); document.body.appendChild(a); a.click(); setTimeout(function () { URL.revokeObjectURL(a.href); a.remove(); }, 1000); }, 'image/png'); });
-        close.addEventListener('click', function () { stage.hidden = true; btn.focus(); });
-        stage.appendChild(canvas); stage.appendChild(el('div', { class: 'due-actions' }, [save, close])); stage.appendChild(el('p', { class: 'lesson-note', text: T.note }));
-        canvas.scrollIntoView({ block: 'nearest' });
-      });
+      try { draw(canvas, n, st, r[0], date); } catch (e) { panel.appendChild(el('p', { text: T.fail })); }
+      var save = el('button', { type: 'button', class: 'practice-check', text: T.save }), shut = el('button', { type: 'button', class: 'practice-reset', text: T.close });
+      save.addEventListener('click', function () { canvas.toBlob(function (b) { if (!b) return; var a = el('a', { href: URL.createObjectURL(b), download: 'unfinished-route-' + route.id + '.png' }); document.body.appendChild(a); a.click(); setTimeout(function () { URL.revokeObjectURL(a.href); a.remove(); }, 1000); }, 'image/png'); });
+      shut.addEventListener('click', close);
+      if (canvas.width === 1200) panel.appendChild(canvas);
+      panel.appendChild(el('div', { class: 'due-actions' }, [save, shut])); panel.appendChild(el('p', { class: 'lesson-note', text: T.note }));
     });
+  }
+  window.UnfinishedFinish.open = function (id) { var r = routes.filter(function (x) { return x.id === id; })[0]; if (r) open(r); };
+
+  // 自动弹出：本页上某条路线从“没读完”变成“读完”，且以前没弹过。
+  var was = {}, s0 = LearningStore.read(), busy = false;
+  routes.forEach(function (r) { was[r.id] = complete(r, s0); });
+  window.addEventListener('learning-change', function () {
+    if (busy) return; var s = LearningStore.read(), fresh = null;
+    routes.forEach(function (r) { var now = complete(r, s); if (now && !was[r.id] && !(s.finished && s.finished[r.id]) && !fresh) fresh = r; was[r.id] = now; });
+    if (!fresh) return;
+    busy = true; LearningStore.write(function (x) { if (!x.finished || typeof x.finished !== 'object' || Array.isArray(x.finished)) x.finished = {}; x.finished[fresh.id] = new Date().toISOString(); }); busy = false;
+    // 伴学真的开口了才打开（关闭、睡眠、页面隐藏时 accept 不会被调用）。
+    document.dispatchEvent(new CustomEvent('unfinished:route-finished', { detail: { name: EN ? fresh.nameEn || fresh.name : fresh.name, accept: function () { open(fresh); } } }));
+  });
+
+  // “学习路线”页：已读完的路线下方留一个再看一次的入口；没读完的写明进度。
+  routes.forEach(function (route) {
+    var host = document.getElementById('route-' + route.id); if (!host || !host.classList || !host.classList.contains('route')) return;
+    var box = el('div', { class: 'route-finish', 'data-route-finish': route.id }), hint = el('p', { class: 'practice-note' }), btn = el('button', { type: 'button', class: 'practice-reset', text: T.make });
+    box.appendChild(hint); box.appendChild(btn); host.appendChild(box);
+    function refresh() { var st = stats(route, LearningStore.read(), null), ok = st.keys > 0 && st.done === st.keys; btn.hidden = !ok; hint.hidden = ok; hint.textContent = fill(T.notYet, { a: st.done, b: st.keys }); }
+    btn.addEventListener('click', function () { open(route); });
     refresh(); window.addEventListener('learning-change', refresh); window.addEventListener('storage', refresh);
   });
 })();
