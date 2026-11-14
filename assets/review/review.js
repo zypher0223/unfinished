@@ -117,7 +117,7 @@
         item.appendChild(det);
         var yes = el('button', { type: 'button', class: 'practice-check', 'data-review-remember': t.key, text: T.remember });
         var no = el('a', { class: 'practice-reset due-reread', href: lessonPath(t), 'data-review-forgot': t.key, text: T.forgot });
-        yes.addEventListener('click', function () { var n = x.r.n + 1; stamp(t.key, n); status.textContent = n >= DAYS.length ? T.mastered : fill(T.done, { d: DAYS[n] }); render(); });
+        yes.addEventListener('click', function () { var n = x.r.n + 1; stamp(t.key, n); status.textContent = n >= DAYS.length ? T.mastered : fill(T.done, { d: DAYS[n] }); render(); if (window.UnfinishedPractice) window.UnfinishedPractice.saveNotice(host); });
         no.addEventListener('click', function () { stamp(t.key, 0); });
         item.appendChild(el('div', { class: 'due-actions' }, [yes, no]));
         ls.appendChild(item);

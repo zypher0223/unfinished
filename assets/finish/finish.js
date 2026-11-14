@@ -1,7 +1,8 @@
 /* 路线完成小结（2026-11-14，用户选定方案 C：卡通月亮 + 月未央）。
  * 在课程页点“标记已学”读完一条路线的最后一课时，由伴学（月未央）自动弹出一张 1200×1500 的小结图片，可保存。
  * 伴学关闭、手动睡眠或本页隐藏时不弹（伴学说了话才打开，见 companion.js 的 unfinished:route-finished）；
- * 之后可在“学习路线”里已读完的路线下方点“查看完成小结”再看。每条路线只自动弹一次（market-learning-v1 的 finished）。
+ * 那次记为待弹（finishPending），以后在课程页伴学醒着时补弹一次。弹过的记在 market-learning-v1 的 finished，每条路线只自动弹一次；
+ * 之后可在“学习路线”里已读完的路线下方点“查看完成小结”再看。
  * 图片在本页用 canvas 画出，不上传。路线与课程对应表、题目答案表由 build-extras.mjs 生成（route-keys.js、answers.js）。
  * 数字全部来自本机学习记录：已读课数、这条路线课后小测的答对题数、这些课程的学习时长。只作学习记录，不是证书或能力证明。 */
 (function () {
@@ -112,16 +113,33 @@
   window.UnfinishedFinish.open = function (id) { var r = routes.filter(function (x) { return x.id === id; })[0]; if (r) open(r); };
 
   // 自动弹出：本页上某条路线从“没读完”变成“读完”，且以前没弹过。
+  // 伴学真的开口了才打开并记为“已弹过”（finished）；伴学关闭、睡眠或页面在后台时记为“待弹”（finishPending），
+  // 以后打开任意课程页、伴学醒着时补弹一次。
   var was = {}, s0 = LearningStore.read(), busy = false;
   routes.forEach(function (r) { was[r.id] = complete(r, s0); });
+  function celebrate(r) {
+    var accepted = false;
+    document.dispatchEvent(new CustomEvent('unfinished:route-finished', { detail: { name: EN ? r.nameEn || r.name : r.name, accept: function () { accepted = true; open(r); } } }));
+    busy = true;
+    LearningStore.write(function (x) {
+      ['finished', 'finishPending'].forEach(function (k) { if (!x[k] || typeof x[k] !== 'object' || Array.isArray(x[k])) x[k] = {}; });
+      if (accepted) { x.finished[r.id] = new Date().toISOString(); delete x.finishPending[r.id]; } else x.finishPending[r.id] = true;
+    });
+    busy = false;
+    return accepted;
+  }
   window.addEventListener('learning-change', function () {
     if (busy) return; var s = LearningStore.read(), fresh = null;
     routes.forEach(function (r) { var now = complete(r, s); if (now && !was[r.id] && !(s.finished && s.finished[r.id]) && !fresh) fresh = r; was[r.id] = now; });
-    if (!fresh) return;
-    busy = true; LearningStore.write(function (x) { if (!x.finished || typeof x.finished !== 'object' || Array.isArray(x.finished)) x.finished = {}; x.finished[fresh.id] = new Date().toISOString(); }); busy = false;
-    // 伴学真的开口了才打开（关闭、睡眠、页面隐藏时 accept 不会被调用）。
-    document.dispatchEvent(new CustomEvent('unfinished:route-finished', { detail: { name: EN ? fresh.nameEn || fresh.name : fresh.name, accept: function () { open(fresh); } } }));
+    if (fresh) celebrate(fresh);
   });
+  function pending() {
+    var s = LearningStore.read(), p = s.finishPending && typeof s.finishPending === 'object' ? s.finishPending : {};
+    var r = routes.filter(function (x) { return p[x.id] === true && complete(x, s) && !(s.finished && s.finished[x.id]); })[0];
+    if (r) celebrate(r);
+  }
+  window.UnfinishedFinish.pending = pending;
+  if (document.querySelector('[data-learning-key]')) setTimeout(pending, 4000); // 只在课程页补弹，等伴学先就位
 
   // “学习路线”页：已读完的路线下方留一个再看一次的入口；没读完的写明进度。
   routes.forEach(function (route) {
