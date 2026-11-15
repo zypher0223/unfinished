@@ -4,7 +4,7 @@
 (() => {
   const box = document.getElementById('d-index-grid');
   if (!box || !window.STUDY_CATALOG) return;
-  const web3 = id => (id >= 179 && id <= 183) || (id >= 196 && id <= 207) || (id >= 214 && id <= 231);
+  const web3 = id => (id >= 179 && id <= 183) || (id >= 196 && id <= 207) || (id >= 214 && id <= 238);
   const all = window.STUDY_CATALOG;
   const isW = t => t.kind === 'technical' && web3(t.id);
   const list = [...all.filter(t => !isW(t)), ...all.filter(isW)];
