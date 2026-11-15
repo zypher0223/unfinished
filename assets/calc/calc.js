@@ -52,6 +52,8 @@
     drawdown: function (loss) { var left = 100 - loss; return { left: left, need: loss / left * 100 }; },
     streak: function (p, n) { var rest = Math.pow(1 - p / 100, n) * 100; return { rest: rest, lost: 100 - rest }; },
     leverage: function (margin, lev, entry, mmr, dir) {
+      if (!(margin > 0 && entry > 0 && lev >= 1 && lev <= 125 && mmr >= 0 && mmr < 50) || ![margin,lev,entry,mmr].every(isFinite)) return { error: 'range' };
+      if (mmr / 100 >= 1 / lev) return { error: 'maintenance' };
       var value = margin * lev, qty = value / entry, m = mmr / 100;
       var liq = dir === 'short' ? entry * (1 + 1 / lev) / (1 + m) : entry * (1 - 1 / lev) / (1 - m);
       return { value: value, qty: qty, liq: liq, move: Math.abs(liq - entry) / entry * 100 };
@@ -91,7 +93,9 @@
         var m = v(f[0]), lev = v(f[1]), e = v(f[2]), mmr = v(f[3]), dir = f[4].input.value;
         if (!(m > 0) || !(e > 0)) return [T.bad];
         if (!(lev >= 1 && lev <= 125) || !(mmr >= 0 && mmr < 50)) return [t.levRange];
-        var r = M.leverage(m, lev, e, mmr, dir), o = { margin: fmt(m, 2), lev: fmt(lev, 2), value: fmt(r.value, 2), entry: fmt(e), qty: fmt(r.qty), mmr: fmt(mmr, 2), liq: fmt(r.liq), move: fmt(r.move, 2) };
+        var r = M.leverage(m, lev, e, mmr, dir);
+        if (r.error) return [EN ? 'The maintenance rate must be below 100 ÷ leverage (%). At or above this threshold, the initial margin cannot support the position.' : '维持保证金率必须低于 100 ÷ 杠杆（%）。达到或超过这个值，初始保证金就不足以维持仓位，不能按正常仓位计算强平距离。'];
+        var o = { margin: fmt(m, 2), lev: fmt(lev, 2), value: fmt(r.value, 2), entry: fmt(e), qty: fmt(r.qty), mmr: fmt(mmr, 2), liq: fmt(r.liq), move: fmt(r.move, 2) };
         return [fill(t.out, o), fill(dir === 'short' ? t.liqShort : t.liqLong, o)];
       } };
     },

@@ -25,14 +25,14 @@
 
   // 纯计算：一条路线的统计。study 是 unfinished.study.v1 读出的对象（可能为 null）。
   function stats(route, s, study, answers) {
-    var keys = route.keys, done = 0, right = 0, total = 0, secs = 0; answers = answers || {};
+    var keys = route.keys, done = 0, right = 0, total = 0, secs = 0; var known = !!answers && Object.keys(answers).length > 0; answers = answers || {};
     keys.forEach(function (k) {
       if (s.courses[k] && s.courses[k].done) done++;
       var pr = s.practice && s.practice[k]; total += 3;
       if (pr && typeof pr === 'object') Object.keys(pr).forEach(function (id) { if (Object.prototype.hasOwnProperty.call(answers, id) && pr[id] && pr[id].answer === answers[id]) right++; });
       var t = study && study.k && study.k[k]; if (typeof t === 'number' && t > 0) secs += t;
     });
-    return { keys: keys.length, done: done, right: Math.min(right, total), total: total, secs: Math.floor(secs) };
+    return { keys: keys.length, done: done, right: known ? Math.min(right, total) : null, total: total, secs: Math.floor(secs) };
   }
   function duration(secs) { var m = Math.round(secs / 60), h = Math.floor(m / 60); return h ? h + T.h + (m % 60) + T.m : m + T.m; }
   window.UnfinishedFinish = { stats: stats };
@@ -72,7 +72,7 @@
     c.fillStyle = '#2B2721'; c.font = '700 76px ' + SERIF; c.fillText(T.title, 80, 935);
     c.fillStyle = '#94702A'; c.font = '500 36px ' + SERIF; var nl = wrap(c, name, 1040).slice(0, 2); nl.forEach(function (l, n) { c.fillText(l, 80, 1010 + n * 50); });
     // 三张成绩卡
-    var top = 1040 + nl.length * 50, cards = [[st.done + ' / ' + st.keys, T.read], [st.right + ' / ' + st.total, T.quiz], [duration(st.secs), T.time]];
+    var top = 1040 + nl.length * 50, cards = [[st.done + ' / ' + st.keys, T.read], [(st.right === null ? '—' : st.right) + ' / ' + st.total, T.quiz], [duration(st.secs), T.time]];
     cards.forEach(function (x, n) {
       var cx = 80 + n * 356, w = 328, h = 178;
       c.fillStyle = '#E0B94A'; rounded(c, cx + 6, top + 6, w, h, 28); c.fill();
@@ -80,13 +80,14 @@
       c.fillStyle = '#2B2721'; var size = 56; c.font = '700 ' + size + 'px ' + SANS; while (c.measureText(x[0]).width > w - 56 && size > 28) { size -= 2; c.font = '700 ' + size + 'px ' + SANS; } c.fillText(x[0], cx + 30, top + 88);
       c.fillStyle = '#5F584D'; var ls = 24; c.font = '400 ' + ls + 'px ' + SANS; while (c.measureText(x[1]).width > w - 56 && ls > 15) { ls -= 1; c.font = '400 ' + ls + 'px ' + SANS; } c.fillText(x[1], cx + 30, top + 138);
     });
+    if (st.right === null) { c.fillStyle = '#5F584D'; c.font = '400 22px ' + SANS; c.fillText(EN ? 'Quiz count unavailable — try loading it again.' : '小测题数尚未载入，不代表零分。', 80, top + 218); }
     c.fillStyle = '#5F584D'; c.font = '400 26px ' + SANS; c.fillText(date + ' · ' + T.foot, 80, H - 80);
   }
   function within(promise, ms, fallback) { return new Promise(function (ok) { var done = false, t = setTimeout(function () { if (!done) { done = true; ok(fallback); } }, ms); promise.then(function (v) { if (!done) { done = true; clearTimeout(t); ok(v); } }, function () { if (!done) { done = true; clearTimeout(t); ok(fallback); } }); }); }
   function loadImage(src) { return new Promise(function (ok) { var i = new Image(); i.onload = function () { ok(i); }; i.onerror = function () { ok(null); }; i.src = src; }); }
   function fonts(texts) { if (!document.fonts || !document.fonts.load) return Promise.resolve(); var all = texts.join(''); return Promise.all([document.fonts.load('700 76px "Noto Serif SC"', all), document.fonts.load('500 36px "Noto Serif SC"', all), document.fonts.load('400 34px "Noto Sans SC"', all), document.fonts.load('700 56px "Noto Sans SC"', all)]).catch(function () {}); }
 
-  function loadAnswers() { return new Promise(function (ok) { if (window.UNF_ANSWERS) return ok(window.UNF_ANSWERS); var sc = document.createElement('script'); sc.src = base + 'finish/answers.js'; sc.onload = function () { ok(window.UNF_ANSWERS || {}); }; sc.onerror = function () { ok({}); }; document.head.appendChild(sc); }); }
+  function loadAnswers() { return new Promise(function (ok) { if (window.UNF_ANSWERS) return ok(window.UNF_ANSWERS); var sc = document.createElement('script'); sc.src = base + 'finish/answers.js'; sc.onload = function () { ok(window.UNF_ANSWERS || null); }; sc.onerror = function () { ok(null); }; document.head.appendChild(sc); }); }
   function complete(route, s) { return route.keys.length > 0 && route.keys.every(function (k) { return s.courses[k] && s.courses[k].done; }); }
 
   // 弹出层：贴在伴学上方，不抢焦点，不遮住整页；Esc 或“收起”关闭。
@@ -96,20 +97,34 @@
     var n = EN ? route.nameEn || route.name : route.name, now = new Date(), date = EN ? now.toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' }) : now.getFullYear() + ' 年 ' + (now.getMonth() + 1) + ' 月 ' + now.getDate() + ' 日';
     var panel = pop = el('section', { class: 'route-finish-pop', role: 'dialog', 'aria-label': T.dialog + (EN ? ': ' : '：') + n, 'data-route-finish-pop': route.id });
     document.body.appendChild(panel);
-    function close() { if (pop === panel) pop = null; panel.remove(); document.removeEventListener('keydown', onKey); }
+    function close() { if (pop === panel) pop = null; panel.remove(); document.removeEventListener('keydown', onKey); setTimeout(pending, 0); }
     function onKey(e) { if (e.key === 'Escape') close(); }
     document.addEventListener('keydown', onKey);
-    // 每项加载都有时限：网络慢或某个请求卡住时，用已有的内容先把图画出来（没等到的字体用系统字体，头像留白，小测按 0 计）。
-    Promise.all([within(loadImage(base + 'mascot/happy.webp'), 6000, null), within(loadAnswers(), 6000, {}), within(fonts([n, T.title, T.foot, T.read, T.quiz, T.time, T.by, date].concat(T.says)), 4000, null)]).then(function (r) {
+    // Missing resources must not look like a zero score. Draw the available facts,
+    // then repaint when a delayed answer table arrives; offer an explicit retry on failure.
+    var answerRequest = loadAnswers();
+    Promise.all([within(loadImage(base + 'mascot/happy.webp'), 6000, null), within(answerRequest, 6000, null), within(fonts([n, T.title, T.foot, T.read, T.quiz, T.time, T.by, date].concat(T.says)), 4000, null)]).then(function (r) {
       if (pop !== panel) return;
-      var st = stats(route, LearningStore.read(), readStudy(), r[1]);
-      var canvas = el('canvas', { class: 'route-finish-canvas', role: 'img', 'aria-label': fill(T.alt, { name: n, a: st.done, b: st.keys, r: st.right, q: st.total, t: duration(st.secs) }) });
-      try { draw(canvas, n, st, r[0], date); } catch (e) { panel.appendChild(el('p', { text: T.fail })); }
+      var canvas = el('canvas', { class: 'route-finish-canvas', role: 'img' });
+      var notice = el('p', { class: 'lesson-note', role: 'status' });
+      var retry = el('button', { type: 'button', class: 'practice-reset', text: EN ? 'Retry quiz count' : '重新加载小测题数' });
+      function paint(answers) {
+        if (pop !== panel) return;
+        var st = stats(route, LearningStore.read(), readStudy(), answers);
+        canvas.setAttribute('aria-label', fill(T.alt, { name: n, a: st.done, b: st.keys, r: st.right === null ? (EN ? 'unavailable' : '暂未载入') : st.right, q: st.total, t: duration(st.secs) }));
+        canvas.setAttribute('data-quiz-known', String(st.right !== null));
+        notice.textContent = st.right === null ? (EN ? 'Quiz answers have not loaded. The picture shows —, not a zero score. Retry to load the count.' : '小测答案尚未载入，图片以“—”表示，不能当作零分。可以重新加载题数。') : '';
+        retry.hidden = st.right !== null; retry.disabled = false;
+        try { draw(canvas, n, st, r[0], date); } catch (e) { notice.textContent = T.fail; }
+      }
+      retry.addEventListener('click', function () { retry.disabled = true; var request = loadAnswers(); within(request, 6000, null).then(paint); request.then(function (a) { if (a) paint(a); }); });
       var save = el('button', { type: 'button', class: 'practice-check', text: T.save }), shut = el('button', { type: 'button', class: 'practice-reset', text: T.close });
       save.addEventListener('click', function () { canvas.toBlob(function (b) { if (!b) return; var a = el('a', { href: URL.createObjectURL(b), download: 'unfinished-route-' + route.id + '.png' }); document.body.appendChild(a); a.click(); setTimeout(function () { URL.revokeObjectURL(a.href); a.remove(); }, 1000); }, 'image/png'); });
       shut.addEventListener('click', close);
-      if (canvas.width === 1200) panel.appendChild(canvas);
-      panel.appendChild(el('div', { class: 'due-actions' }, [save, shut])); panel.appendChild(el('p', { class: 'lesson-note', text: T.note }));
+      panel.appendChild(canvas); panel.appendChild(notice);
+      panel.appendChild(el('div', { class: 'due-actions' }, [save, shut, retry])); panel.appendChild(el('p', { class: 'lesson-note', text: T.note }));
+      paint(r[1]);
+      answerRequest.then(function (a) { if (a) paint(a); });
     });
   }
   window.UnfinishedFinish.open = function (id) { var r = routes.filter(function (x) { return x.id === id; })[0]; if (r) open(r); };
@@ -131,14 +146,24 @@
     return accepted;
   }
   window.addEventListener('learning-change', function () {
-    if (busy) return; var s = LearningStore.read(), fresh = null;
-    routes.forEach(function (r) { var now = complete(r, s); if (now && !was[r.id] && !(s.finished && s.finished[r.id]) && !fresh) fresh = r; was[r.id] = now; });
-    if (fresh) celebrate(fresh);
+    if (busy) return; var s = LearningStore.read(), fresh = [];
+    routes.forEach(function (r) { var now = complete(r, s); if (now && !was[r.id] && !(s.finished && s.finished[r.id])) fresh.push(r); was[r.id] = now; });
+    if (!fresh.length) return;
+    busy = true;
+    LearningStore.write(function (x) { if (!x.finishPending) x.finishPending = {}; fresh.forEach(function (r) { x.finishPending[r.id] = true; }); });
+    busy = false; pending();
   });
-  function pending() {
+  function nextPending() {
+    if (pop || busy) return;
     var s = LearningStore.read(), p = s.finishPending && typeof s.finishPending === 'object' ? s.finishPending : {};
     var r = routes.filter(function (x) { return p[x.id] === true && complete(x, s) && !(s.finished && s.finished[x.id]); })[0];
     if (r) celebrate(r);
+  }
+  function pending() {
+    if (pop || busy) return;
+    // Serialize the check-and-mark across tabs where Web Locks are available.
+    if (typeof navigator !== 'undefined' && navigator.locks) navigator.locks.request('unfinished-route-summary', { ifAvailable: true }, function (lock) { if (lock) nextPending(); });
+    else nextPending();
   }
   window.UnfinishedFinish.pending = pending;
   if (document.querySelector('[data-learning-key]')) setTimeout(pending, 4000); // 只在课程页补弹，等伴学先就位

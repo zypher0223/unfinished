@@ -93,7 +93,7 @@ function finishTest(){const missing=attempt.answers.findIndex(x=>x===null);if(mi
 // 写入失败（例如浏览器存储空间不足）时：草稿原样保留并标记为“已交卷未保存”，占位改成 failed，页面给出提示和重试按钮。
 function persistRun(run){let fixed=0;
  if(window.LearningStore)LearningStore.write(s=>{fixed=0;run.questions.forEach((q,i)=>{const out=LearningStore.answer(s,{q:q.id,answer:run.answers[i],correct:q.answer===run.answers[i],src:'test',run:run.runId});if(out.recorded&&out.result==='fix')fixed++;});});
- run.fixed=Math.max(run.fixed||0,fixed);
+ run.fixed=Math.max(run.fixed||0,fixed);run.conflicts=window.LearningStore&&LearningStore.conflicts?LearningStore.conflicts():0;
  const saved=!window.LearningStore||LearningStore.saved();
  if(saved){run.unsaved=false;clearDraftFor(run.runId);settleRun(run.runId,'saved');try{localStorage.setItem('market-last-assessment',JSON.stringify({scope:run.scope,level:run.level,right:run.questions.filter((q,i)=>q.answer===run.answers[i]).length,total:run.questions.length,date:new Date().toISOString()}));}catch{}}
  else{run.unsaved=true;if(attempt===run&&draftBelongsTo(run.runId))saveDraft();settleRun(run.runId,'failed');}
@@ -103,6 +103,7 @@ function announceSaved(run){if(run.announced)return;run.announced=true;
  document.dispatchEvent(new CustomEvent('unfinished:assessment-submitted',{detail:{runId:run.runId}}));
  if(run.fixed)document.dispatchEvent(new CustomEvent('unfinished:growth',{detail:{kind:'fix',count:run.fixed,src:'test'}}));}
 function saveStateHtml(run,state){
+ if(state==='saved'&&run.conflicts)return '<p class="result-saved">这次作答已保存；与另一窗口冲突的项目保留了另一窗口已保存的版本。</p>';
  if(state==='saved')return run.retried?'<p class="result-saved">这次作答已保存到本机记录。</p>':'';
  if(state==='elsewhere')return '<p class="result-saved">这次作答已经在另一个窗口保存，没有重复记分。</p>';
  return `<div class="result-unsaved"><p class="result-unsaved-title">这次作答还没有保存。</p><p>浏览器没能把记录写进本机（常见原因是存储空间不足，或浏览器禁止本站保存数据），所以错题本和学习小结里还没有这一轮。</p><p>答卷仍完整留在本页；刷新后，测验页开头也能找到它并重新保存。清理浏览器存储空间后点下面的按钮，只会保存一次，不会重复记分。</p><p><button type="button" class="test-primary" id="test-save-retry">重新保存这次作答</button></p><p id="test-save-message" role="status" aria-live="polite">${state==='busy'?'另一个窗口正在保存这份测验，请过几秒再试。':state==='again'?'还是没能保存。请先清理浏览器存储空间，再点一次。':''}</p></div>`;}

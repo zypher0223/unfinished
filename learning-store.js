@@ -1,10 +1,38 @@
-(()=>{const key='market-learning-v1';let memory={courses:{},wrong:{},cases:{},last:null};let unavailable=false,lastSaved=true;
-function read(){if(!lastSaved)return memory;try{const d=JSON.parse(localStorage.getItem(key)||'null');if(d&&typeof d==='object'&&!Array.isArray(d))return {...memory,...d,courses:d.courses&&typeof d.courses==='object'?d.courses:{},wrong:d.wrong&&typeof d.wrong==='object'?d.wrong:{},cases:d.cases&&typeof d.cases==='object'?d.cases:{}};}catch{unavailable=true;}return memory;}
-// lastSaved：最近一次 write 是否真的写进了 localStorage。写入失败（例如存储空间不足）时记录只留在本页内存里，刷新就没了，
-// 调用方需要“确认已保存”时用 LearningStore.saved() 判断，不能只看 write 有没有返回。
-// 写入失败后（2026-11-15）：read() 在补存成功之前一直返回本页内存里的那份，页面上的作答、错题不会“闪回”旧记录；
-// retry() 把内存里的这份再写一次，成功后一切照常。失败期间其他窗口写入的改动会被这一份覆盖（同一浏览器同时开两个窗口且恰好存不进去的情况）。
-function write(fn){let s=read();fn(s);memory=s;try{localStorage.setItem(key,JSON.stringify(s));lastSaved=true;unavailable=false;}catch{unavailable=true;lastSaved=false;}window.dispatchEvent(new Event('learning-change'));return s;}
+(()=>{const key='market-learning-v1';
+const empty=()=>({courses:{},wrong:{},cases:{},last:null});
+let memory=empty(),unavailable=false,lastSaved=true,pendingBase=null,conflicts=0;
+const clone=x=>x===undefined?undefined:JSON.parse(JSON.stringify(x));
+const same=(a,b)=>JSON.stringify(a)===JSON.stringify(b);
+const object=x=>x&&typeof x==='object'&&!Array.isArray(x);
+function disk(){const d=JSON.parse(localStorage.getItem(key)||'null');return object(d)?{...empty(),...d,courses:object(d.courses)?d.courses:{},wrong:object(d.wrong)?d.wrong:{},cases:object(d.cases)?d.cases:{}}:empty();}
+function read(){if(!lastSaved)return memory;try{return disk();}catch{unavailable=true;return memory;}}
+// Three-way merge: replay only this page's changes onto the latest persisted record.
+// Unchanged fields follow the other window, including deliberate deletions. Conflicting
+// records keep the already-persisted version; answer history merges by unique event id.
+function merge(base,local,remote,path=[]){
+ if(same(local,base))return clone(remote);
+ if(same(remote,base)||same(local,remote))return clone(local);
+ if(path.join('.')==='growth.events'){
+  const map=a=>Object.fromEntries((a||[]).map(e=>[e.id,e]));
+  const out=merge(map(base),map(local),map(remote),['eventsById']);
+  return Object.values(out).sort((a,b)=>Date.parse(a.t)-Date.parse(b.t));
+ }
+ const atomic=(['wrong','review','cases','eventsById'].includes(path[0])&&path.length===2)||(path[0]==='practice'&&path.length===3);
+ if(!atomic&&object(local)&&object(remote)&&(base===undefined||object(base))){
+  const out={};for(const k of new Set([...Object.keys(base||{}),...Object.keys(local),...Object.keys(remote)])){
+   const v=merge(base&&base[k],local[k],remote[k],path.concat(k));if(v!==undefined)out[k]=v;
+  }return out;
+ }
+ conflicts++;return clone(remote);
+}
+// Failed writes keep a local draft. Each retry (and each subsequent write) merges
+// against disk again, so another window's saved quiz is never replaced by a stale snapshot.
+function write(fn){const before=clone(read()),s=clone(before);fn(s);conflicts=0;
+ let base=pendingBase||before,latest;try{latest=disk();}catch{latest=clone(base);}
+ memory=merge(base,s,latest);pendingBase=clone(latest);
+ try{localStorage.setItem(key,JSON.stringify(memory));lastSaved=true;unavailable=false;pendingBase=null;}
+ catch{unavailable=true;lastSaved=false;}
+ window.dispatchEvent(new Event('learning-change'));return memory;}
 function retry(){write(()=>{});return lastSaved;}
 // 作答事件按日期保留，不按条数截断：保留“今天往前共 KEEP_DAYS 个自然日”内的全部事件（小结只显示今天和近 7 天，多留几天是为了跨时区和时钟误差）。
 // 更早的事件删除前，把最早一条的时间记到 growth.since，供“作答从某天起记录”这句说明使用。
@@ -37,4 +65,4 @@ function answer(s,e){const was=Object.prototype.hasOwnProperty.call(s.wrong,e.q)
  s.growth.events.push({id,t:at,q:e.q,r:result,src:e.src||'other',...(e.topic?{topic:e.topic}:{})});
  pruneGrowth(s.growth,e.now);
  return {result,recorded:true};}
-window.LearningStore={read,write,answer,pruneGrowth,KEEP_DAYS,REVIEW_DAYS,reviewOk,reviewDue,available:()=>!unavailable,saved:()=>lastSaved,retry};})();
+window.LearningStore={read,write,answer,pruneGrowth,KEEP_DAYS,REVIEW_DAYS,reviewOk,reviewDue,available:()=>!unavailable,saved:()=>lastSaved,conflicts:()=>conflicts,retry};})();
