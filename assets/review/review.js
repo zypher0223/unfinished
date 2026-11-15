@@ -101,7 +101,7 @@
         });
         qs.appendChild(go);
       }
-      d.dueCases.forEach(function (id) { qs.appendChild(el('p', {}, [el('a', { href: '#' + id, text: fill(T.caseDue, { t: byCase[id].title }) })])); });
+      d.dueCases.forEach(function (id) { qs.appendChild(el('p', {}, [el('a', { href: 'study.html#' + id, text: fill(T.caseDue, { t: byCase[id].title }) })])); });
       host.appendChild(qs);
     }
     host.appendChild(stage);
