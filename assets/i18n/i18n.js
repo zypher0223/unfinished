@@ -93,7 +93,7 @@
     [/^第 (\d+) 题 · (.+)$/, function (m) { var R = { '答对': 'Correct', '正确': 'Correct', '回答正确': 'Correct', '回答错误': 'Wrong', '需要复习': 'Needs review', '答错': 'Wrong' }; return 'Question ' + m[1] + ' · ' + m[2].split(' · ').map(function (x) { return R[x] || D(x) || x; }).join(' · '); }],
     [/^复习相关课程 (\S+)$/, function (m) { return 'Review lesson ' + m[1]; }],
     [/^复习信息课程 (\S+)$/, function (m) { return 'Review information lesson ' + m[1]; }],
-    [/^这台设备上次成绩：(.+) · (.+)，(\d+)\/(\d+)。$/, function (m) { return 'Last score on this device: ' + (D(m[1]) || m[1]) + ' · ' + (LV[m[2]] || m[2]) + ', ' + m[3] + '/' + m[4] + '.'; }],
+    [/^最近一次成绩：(.+) · (.+)，(\d+)\/(\d+)。$/, function (m) { return 'Most recent score: ' + (D(m[1]) || m[1]) + ' · ' + (LV[m[2]] || m[2]) + ', ' + m[3] + '/' + m[4] + '.'; }],
     [/^上次选择：(.*)$/, function (m) { return 'Last choice: ' + (D(m[1]) || m[1]); }],
     [/^([A-D])\. (.+)$/, function (m) { var a = D(m[2]); return a ? m[1] + '. ' + a : null; }],
     [/^核查：(.+)$/, function (m) { return 'Checked: ' + m[1]; }],

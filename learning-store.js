@@ -34,6 +34,7 @@ function write(fn){const before=clone(read()),s=clone(before);fn(s);conflicts=0;
  catch{unavailable=true;lastSaved=false;}
  window.dispatchEvent(new Event('learning-change'));return memory;}
 function retry(){write(()=>{});return lastSaved;}
+function adoptStored(){memory=disk();pendingBase=null;lastSaved=true;unavailable=false;}
 // 作答事件按日期保留，不按条数截断：保留“今天往前共 KEEP_DAYS 个自然日”内的全部事件（小结只显示今天和近 7 天，多留几天是为了跨时区和时钟误差）。
 // 更早的事件删除前，把最早一条的时间记到 growth.since，供“作答从某天起记录”这句说明使用。
 const KEEP_DAYS=10;
@@ -65,4 +66,4 @@ function answer(s,e){const was=Object.prototype.hasOwnProperty.call(s.wrong,e.q)
  s.growth.events.push({id,t:at,q:e.q,r:result,src:e.src||'other',...(e.topic?{topic:e.topic}:{})});
  pruneGrowth(s.growth,e.now);
  return {result,recorded:true};}
-window.LearningStore={read,write,answer,pruneGrowth,KEEP_DAYS,REVIEW_DAYS,reviewOk,reviewDue,available:()=>!unavailable,saved:()=>lastSaved,conflicts:()=>conflicts,retry};})();
+window.LearningStore={read,write,answer,pruneGrowth,KEEP_DAYS,REVIEW_DAYS,reviewOk,reviewDue,available:()=>!unavailable,saved:()=>lastSaved,conflicts:()=>conflicts,retry,adoptStored};})();

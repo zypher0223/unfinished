@@ -229,6 +229,7 @@
   var exerciseRuns = {}, lessonChecks = [], pageProgress = null;
   var dockFrame = null;
   var PROGRESS_KEY = 'unfinished.companion.progress.v1';
+  window.addEventListener('unfinished:cloud-applied', function () { if (typeof pageProgress !== 'undefined') { var all = load(PROGRESS_KEY, {}); pageProgress = all[location.pathname] || { checks: {} }; if (!pageProgress.checks) pageProgress.checks = {}; if (typeof lessonChecks !== 'undefined') lessonChecks.forEach(function (d) { if (d.__ucpRefresh) d.__ucpRefresh(); }); } });
   var REDUCED = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
 
   function manuallySleeping() { return settings().companionSleep === true; }

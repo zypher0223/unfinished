@@ -134,6 +134,7 @@
   // 以后打开任意课程页、伴学醒着时补弹一次。
   var was = {}, s0 = LearningStore.read(), busy = false;
   routes.forEach(function (r) { was[r.id] = complete(r, s0); });
+  window.addEventListener('unfinished:cloud-applying', function (event) { var next = event.detail && event.detail.learning; if (next) routes.forEach(function (r) { was[r.id] = complete(r, next); }); });
   function celebrate(r) {
     var accepted = false;
     document.dispatchEvent(new CustomEvent('unfinished:route-finished', { detail: { name: EN ? r.nameEn || r.name : r.name, accept: function () { accepted = true; open(r); } } }));
