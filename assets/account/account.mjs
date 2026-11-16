@@ -1,6 +1,6 @@
 import {KEYS,sanitizeDoc,recordCount} from './model.mjs?v=f8867c6e6cd5';
 import {CloudSync,Vault,SESSION,OWNER} from './engine.mjs?v=c49ea346b1f0';
-const config=window.UNFINISHED_ACCOUNT_CONFIG||{},host=document.querySelector('[data-account]');
+const config=window.UNFINISHED_ACCOUNT_CONFIG||{},pageHost=document.querySelector('[data-account]');
 const EN=(document.documentElement.lang||'').startsWith('en');
 const text=(zh,en)=>EN?en:zh;
 const messages={
@@ -17,7 +17,11 @@ const messages={
  recovery_pending:text('密码恢复尚未完成，请用相同信息重试；不要反复更换新密码。','Recovery is not complete. Retry the same request and password.'),account_unavailable:text('账户正在恢复中，请稍后重试。','Account recovery is in progress. Try again shortly.')
 };
 function element(tag,attrs={},children=[]){const el=document.createElement(tag);for(const[k,v]of Object.entries(attrs)){if(k==='text')el.textContent=v;else el.setAttribute(k,v);}for(const c of children)el.append(c);return el;}
-const status=element('p',{class:'account-status',role:'status','aria-live':'polite'});let pendingCode='',lastSync='',health=false,busy=false;
+// The account panel lives in the site settings dialog (gear button, top right). A page may still provide its own [data-account] host.
+const host=pageHost||element('section',{class:'account-section account-in-settings','data-account':'','aria-labelledby':'account-title'});
+const H2=pageHost?'h2':'h3',H3=pageHost?'h3':'h4';
+window.UnfinishedAccountHost=host;window.dispatchEvent(new Event('unfinished:account-host'));
+const status=element('p',{class:'account-status',role:'status','aria-live':'polite'});let pendingCode='',lastSync='',health=false,busy=false,checked=false,checking=false;
 function setStatus(code){if(code==='synced')lastSync=new Date().toLocaleTimeString(EN?'en':'zh-CN');status.textContent=(messages[code]||messages.offline)+(code==='synced'?' · '+lastSync:'');}
 async function api(action,data={},session){
  const response=await fetch(config.endpoint,{method:'POST',headers:{'Content-Type':'application/json',...(session?.token?{Authorization:'Bearer '+session.token}:{})},body:JSON.stringify({action,...data}),signal:AbortSignal.timeout(25000)});
@@ -45,7 +49,10 @@ async function switchLocked(fn){return navigator.locks?navigator.locks.request('
 function input(label,type,name,autocomplete){const field=element('label',{class:'account-field'},[element('span',{text:label})]);const el=element('input',{type,name,required:'',autocomplete});if(type==='password'){el.minLength=12;el.maxLength=128;}field.append(el);return {field,input:el};}
 function button(label,fn,kind='button'){const b=element('button',{type:kind,class:'account-button',text:label});if(fn)b.addEventListener('click',fn);return b;}
 async function operation(fn){if(busy)return;busy=true;const controls=host?[...host.querySelectorAll('button')].map(b=>[b,b.disabled]):[];controls.forEach(([b])=>b.disabled=true);try{await fn();}catch(e){status.textContent=messages[e.message]||messages.offline;}finally{busy=false;controls.filter(([b])=>b.isConnected).forEach(([b,disabled])=>b.disabled=disabled);}}
-function shell(){const notice=document.getElementById('storage-notice');if(notice)notice.textContent=cloud?.session?text('当前账户可同步学习记录，状态见下方。标记已学表示读过，不代表掌握。','This account can sync learning records; see its status below. Marking a lesson as read does not prove mastery.'):text('游客记录保存在当前浏览器。登录并开启同步后，可在其他设备继续学习。','Guest work stays in this browser. Sign in and enable sync to continue on other devices.');host.replaceChildren(element('h2',{id:'account-title',text:text('账户与云同步','Account & cloud sync')}));host.append(status);}
+function summary(){const s=cloud?.session;
+ const notice=document.getElementById('storage-notice');if(notice)notice.textContent=s?text('当前账户会自动同步学习记录。标记已学表示读过，不代表掌握。','This account syncs your learning records automatically. Marking a lesson as read does not prove mastery.'):text('游客记录保存在当前浏览器。在右上角“账户与设置”登录后，可在其他设备继续学习。','Guest work stays in this browser. Sign in from “Account & settings” at the top right to continue on other devices.');
+ for(const el of document.querySelectorAll('[data-account-summary]'))el.textContent=s?text('已登录：','Signed in: ')+s.user.email+text('。学习记录会自动同步。','. Learning records sync automatically.'):text('未登录：学习记录只保存在当前浏览器。','Not signed in: learning records stay in this browser only.');}
+function shell(){summary();host.replaceChildren(element(H2,{id:'account-title',text:text('账户与云同步','Account & cloud sync')}));host.append(status);}
 function showRecovery(code,continueAction){
  pendingCode=code;shell();host.append(element('p',{text:text('请保存这份恢复码','Save your recovery code')}),element('p',{text:text('忘记密码时，可用邮箱和恢复码找回账户。不发送验证邮件；两者都丢失且没有其他验证方式时，无法可靠找回。','Use your email and this code if you forget your password. No verification email is sent. Without your password or recovery code, recovery may be impossible.')}));
  const display=element('code',{class:'account-recovery',text:code});host.append(display);
@@ -64,7 +71,7 @@ async function preview(session){
 }
 function form(mode){
  shell();const labels={login:text('登录','Sign in'),signup:text('注册账户','Create account'),recover:text('用恢复码找回','Recover with a code')};
- host.append(element('h3',{text:labels[mode]}));const f=element('form',{class:'account-form'}),email=input(text('邮箱','Email'),'email','email','username'),password=input(mode==='recover'?text('新密码','New password'):text('密码（12–128 个字符）','Password (12–128 characters)'),'password','password',mode==='login'?'current-password':'new-password');
+ host.append(element(H3,{text:labels[mode]}));const f=element('form',{class:'account-form'}),email=input(text('邮箱','Email'),'email','email','username'),password=input(mode==='recover'?text('新密码','New password'):text('密码（12–128 个字符）','Password (12–128 characters)'),'password','password',mode==='login'?'current-password':'new-password');
  email.input.maxLength=254;if(cloud.session)email.input.value=cloud.session.user.email;
  f.append(email.field);let code;
  if(mode==='recover'){code=input(text('恢复码','Recovery code'),'text','recovery','off');code.input.maxLength=80;code.input.spellcheck=false;f.append(code.field);}
@@ -87,12 +94,12 @@ function form(mode){
 }
 function render(){
  if(!host||!cloud)return;shell();
- if((!config.enabled||!health)&&!cloud.session){host.append(element('p',{text:text('云同步尚未开放；你仍可直接学习，并使用下方备份功能保存记录。','Cloud sync is not available yet. Keep studying locally and use the backup controls below.')}));if(config.enabled)host.append(button(text('重试连接','Retry connection'),()=>operation(async()=>{health=(await api('health')).ready===true;render();})));return;}
+ if((!config.enabled||!health)&&!cloud.session){if(config.enabled&&!checked){host.append(element('p',{text:text('正在连接云同步…','Connecting to cloud sync…')}));return;}host.append(element('p',{text:text('云同步暂时连不上；你仍可直接学习，并在“我的学习”页用“备份与恢复”保存记录。','Cloud sync is unavailable right now. Keep studying, and use Backup & restore on the My learning page to save your record.')}));if(config.enabled)host.append(button(text('重试连接','Retry connection'),()=>operation(async()=>{health=(await api('health')).ready===true;render();})));return;}
  if(!cloud.session){host.append(element('p',{text:text('游客也能学习。注册后可在手机和电脑间接着学；邮箱与密码登录，不发送验证码。','Study as a guest, or create an account to continue across devices. Sign in with email and password; no verification code is sent.')}));const actions=element('div',{class:'account-actions'});for(const mode of ['login','signup','recover'])actions.append(button({login:text('登录同步','Sign in to sync'),signup:text('注册账户','Create account'),recover:text('忘记密码','Forgot password')}[mode],()=>form(mode)));host.append(actions);return;}
  host.append(element('p',{class:'account-email',text:cloud.session.user.email}));
  const actions=element('div',{class:'account-actions'});actions.append(button(text('立即同步','Sync now'),()=>operation(synchronize)),button(text('重新登录','Sign in again'),()=>form('login')),button(text('退出账户','Sign out'),()=>operation(async()=>{await switchLocked(()=>cloud.logout());window.UnfinishedAccountGuard?.adopt();location.reload();})),button(text('更换恢复码','Replace recovery code'),()=>manage('rotate')),button(text('删除账户','Delete account'),()=>manage('delete')));host.append(actions,element('p',{class:'account-note',text:text('只同步学习记录；AI 密钥、未交卷测验和本页未保存的作答不会上传。离线改动会在联网后补存。','Only learning records are synced. AI keys, unfinished tests and answers not yet saved on this page are excluded. Offline work syncs when connected.')}));
 }
-function manage(mode){shell();const deleting=mode==='delete';host.append(element('h3',{text:deleting?text('删除账户与云端记录','Delete account and cloud record'):text('更换恢复码','Replace recovery code')}));
+function manage(mode){shell();const deleting=mode==='delete';host.append(element(H3,{text:deleting?text('删除账户与云端记录','Delete account and cloud record'):text('更换恢复码','Replace recovery code')}));
  host.append(element('p',{text:deleting?text('此操作会永久删除该账户和云端学习记录。请先导出备份；本机游客记录不受影响。','This permanently deletes the account and cloud learning record. Export a backup first. Guest work on this device is kept.'):text('请输入当前密码。生成新恢复码后，旧码立即失效。','Enter your current password. The old code stops working when a new one is generated.')}));
  const f=element('form',{class:'account-form'}),password=input(text('当前密码','Current password'),'password','password','current-password');f.append(password.field);let confirmation;
  if(deleting){confirmation=input(text('再次输入账户邮箱确认删除','Retype account email to confirm deletion'),'email','confirm','off');f.append(confirmation.field);}
@@ -105,8 +112,10 @@ function manage(mode){shell();const deleting=mode==='delete';host.append(element
 let timer;function schedule(){if(config.enabled&&cloud?.session){clearTimeout(timer);timer=setTimeout(synchronize,5000);}}
 if(cloud){
  await cloud.resumeTransition().catch(e=>setStatus(e.message));window.UnfinishedAccountGuard?.adopt();
- if(config.enabled&&(host||cloud.session)){try{health=(await api('health')).ready===true;}catch{health=false;}render();if(cloud.session&&health){try{await api('me',{},cloud.session);await synchronize();}catch(e){setStatus(e.message);}}}
+ if(config.enabled&&cloud.session){try{health=(await api('health')).ready===true;}catch{health=false;}checked=true;render();if(health){try{await api('me',{},cloud.session);await synchronize();}catch(e){setStatus(e.message);}}}
  else render();
+ // Guests: only contact the server when they open the settings dialog, not on every page view.
+ window.addEventListener('unfinished:settings-open',async()=>{if(!config.enabled||health||cloud.session||checking||busy)return;checking=true;try{health=(await api('health')).ready===true;}catch{health=false;}checking=false;checked=true;render();});
  window.addEventListener('learning-change',schedule);window.addEventListener('online',schedule);window.addEventListener('focus',schedule);
  setInterval(()=>{if(document.visibilityState==='visible')synchronize();},30000);
 }

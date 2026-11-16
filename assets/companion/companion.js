@@ -22,7 +22,7 @@
     selfcheckHelp: 'Mark after trying it yourself. Opening the answer does not mark completion or correctness.',
     exerciseProgress: 'Page exercises completed: {n} / {total}',
     sleepHelp: 'Sleep keeps her quiet until you wake her. During a natural nap, halfway and full exercise milestones can wake her to cheer you on.',
-    settings: 'Settings', settingsTitle: 'Site settings', close: 'Close',
+    settings: 'Account & settings', settingsTitle: 'Account & settings', accountMissing: 'Account features are loading…', close: 'Close',
     compTitle: 'Study buddy', compToggle: 'Show Yue Weiyang on lesson pages',
     compHelp: 'She keeps track of how long you study on this device, reminds you to take breaks and cheers you on. The record stays in this browser only.',
     clear: 'Clear study-time record', clearSure: 'Click again to clear', cleared: 'Cleared.',
@@ -41,7 +41,7 @@
     selfcheckHelp: '自己想过后再标记；展开答案不计作完成，标记也不代表答对。',
     exerciseProgress: '本页练习已完成 {n} / {total}',
     sleepHelp: '点“睡觉”后，她会安静到你唤醒为止。自然小憩时，完成半数或全部题目会叫醒她来给你鼓劲。',
-    settings: '设置', settingsTitle: '网站设置', close: '关闭',
+    settings: '账户与设置', settingsTitle: '账户与设置', accountMissing: '账户功能正在加载…', close: '关闭',
     compTitle: '学习陪伴', compToggle: '在课程页显示月未央',
     compHelp: '她会记录你在这台设备上的学习时长，适时提醒休息、给你打气。记录只保存在这个浏览器里。',
     clear: '清除学习时长记录', clearSure: '再点一次确认清除', cleared: '已清除。',
@@ -175,6 +175,7 @@
     function paperBtn(code, label) { var b = h('button', { type: 'button', class: 'ucp-segbtn', role: 'radio', 'aria-checked': String(paperNow === code), text: label, onclick: function () { if (window.UNF_SET_PAPER) window.UNF_SET_PAPER(code); paperBtns.forEach(function (x) { x.setAttribute('aria-checked', String(x === b)); }); } }); paperBtns.push(b); return b; }
     dlg = h('dialog', { class: 'ucp-dialog', 'aria-labelledby': 'ucp-dlg-title' }, [
       h('div', { class: 'ucp-dlg-head' }, [h('h2', { id: 'ucp-dlg-title', text: T.settingsTitle }), h('button', { type: 'button', class: 'ucp-x', 'aria-label': T.close, title: T.close, text: '×', onclick: function () { dlg.close(); } })]),
+      accountSec = h('section', { class: 'ucp-sec ucp-account' }, [h('p', { class: 'ucp-help', text: T.accountMissing })]),
       h('section', { class: 'ucp-sec ucp-lang' }, [
         h('h3', { id: 'ucp-lang-title', text: T.langTitle }),
         h('div', { class: 'ucp-seg', role: 'radiogroup', 'aria-labelledby': 'ucp-lang-title' }, [langBtn('zh', '中文'), langBtn('en', 'English')]),
@@ -195,7 +196,12 @@
     ]);
     dlg.addEventListener('click', function (e) { if (e.target === dlg) dlg.close(); });
     document.body.appendChild(dlg);
+    mountAccount();
   }
+  // The account panel (assets/account/account.mjs) is placed at the top of this dialog.
+  var accountSec;
+  function mountAccount() { var host = window.UnfinishedAccountHost; if (accountSec && host && host.parentNode !== accountSec) accountSec.replaceChildren(host); }
+  window.addEventListener('unfinished:account-host', mountAccount);
   function switchLang(code) {
     var cur = window.UNF_LANG || (EN ? 'en' : 'zh'); if (cur === code) return;
     if (window.UNF_SET_LANG) window.UNF_SET_LANG(code); else { var s = settings(); s.lang = code; save(SKEY, s); }
@@ -209,7 +215,9 @@
     var s = data(), t = s.d[dayKey()] || 0;
     statsLine.textContent = s.total ? T.today + ' ' + mins(t) + T.min + ' · ' + T.streak + ' ' + streak(s) + T.days + ' · ' + T.total + ' ' + fmtTotal(s.total) : T.noData;
   }
-  function openSettings() { if (!dlg) buildSettings(); fillSettings(); clearBtn.textContent = T.clear; clearArmed = false; if (dlg.showModal) dlg.showModal(); else dlg.setAttribute('open', ''); }
+  function openSettings() { if (!dlg) buildSettings(); mountAccount(); fillSettings(); clearBtn.textContent = T.clear; clearArmed = false; if (dlg.showModal) dlg.showModal(); else dlg.setAttribute('open', ''); window.dispatchEvent(new Event('unfinished:settings-open')); }
+  window.UnfinishedOpenSettings = openSettings;
+  document.addEventListener('click', function (e) { var t = e.target.closest && e.target.closest('[data-open-settings]'); if (t) { e.preventDefault(); openSettings(); } });
   function addGear() {
     var header = document.querySelector('.folio-header, .lesson-header'); if (!header || header.querySelector('.ucp-gear')) return;
     var b = h('button', { type: 'button', class: 'ucp-gear', 'aria-label': T.settingsTitle, title: T.settingsTitle, onclick: openSettings }, [gearIcon(), h('span', { text: T.settings })]);

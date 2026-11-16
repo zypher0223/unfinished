@@ -8,3 +8,26 @@
 .account-check{display:flex;align-items:flex-start;gap:10px;max-width:66ch;line-height:1.7;margin:18px 0;font-size:14px}.account-check input{width:20px;height:20px;flex:none;margin-top:3px}
 .account-note{font-size:13px;color:var(--d-muted)}.account-email{overflow-wrap:anywhere}.account-recovery{display:block;max-width:600px;overflow-wrap:anywhere;padding:18px;border:1px solid var(--d-line);font-size:clamp(16px,3vw,22px);line-height:1.7;letter-spacing:.05em}
 @media(max-width:600px){.account-actions .account-button{flex:1 1 140px}.account-form{max-width:none}}
+/* Inside the “账户与设置” dialog (dark glass, see companion.css) */
+.ucp-dialog .account-section{border:0;padding:0;margin:0;font-family:inherit;color:#eceaf2}
+.ucp-dialog .account-section h3{margin:0 0 6px;font-size:14px;font-weight:600;color:#c89f60}
+.ucp-dialog .account-section h4{margin:10px 0 4px;font-size:15px;font-weight:600;color:#eceaf2}
+.ucp-dialog .account-section p{margin:0 0 10px;font-size:13px;line-height:1.7;color:#c9c7d2}
+.ucp-dialog .account-section .account-status{min-height:0;color:#e2c48f}.ucp-dialog .account-section .account-status:empty{display:none}
+.ucp-dialog .account-section .account-note{color:#a3a6b4}
+.ucp-dialog .account-email{font-size:15px;color:#eceaf2}
+.ucp-dialog .account-form{max-width:none;gap:12px;margin:12px 0}.ucp-dialog .account-field{font-size:13px;color:#c9c7d2}
+.ucp-dialog .account-field input{color:#eceaf2;background:rgba(0,0,0,.28);border:1px solid rgba(255,255,255,.24);border-radius:8px;min-height:44px}
+.ucp-dialog .account-actions{gap:8px;margin:10px 0}
+.ucp-dialog .account-section .account-button{min-height:40px;padding:8px 14px;font-size:13px;border:1px solid rgba(255,255,255,.28);border-radius:20px;background:rgba(255,255,255,.06);color:#eceaf2}
+.ucp-dialog .account-section .account-button[type=submit],.ucp-dialog .account-section .account-actions .account-button:first-child{background:#b08b4f;border-color:#b08b4f;color:#16131c}
+.ucp-dialog .account-section .account-button:hover:not(:disabled){opacity:1;border-color:rgba(255,255,255,.5)}
+.ucp-dialog .account-check{font-size:13px;color:#c9c7d2;margin:12px 0}
+.ucp-dialog .account-recovery{padding:12px;border:1px solid rgba(255,255,255,.24);border-radius:8px;font-size:17px;color:#eceaf2;background:rgba(0,0,0,.28)}
+.ucp-dialog .account-button:focus-visible,.ucp-dialog .account-field input:focus-visible,.ucp-dialog .account-check input:focus-visible{outline:2px solid #e2c48f;outline-offset:2px}
+@media(max-width:600px){.ucp-dialog .account-actions .account-button{flex:1 1 120px}}
+/* 我的学习页上的账户简述 */
+.account-pointer{border-block:1px solid var(--d-line);padding:20px 0;margin:0 0 32px;font-family:var(--sans,system-ui)}
+.account-pointer h2{font-size:22px;margin:0 0 8px}.account-pointer p{max-width:66ch;line-height:1.75;margin:0 0 12px}
+.account-pointer .account-open{font:inherit;font-size:14px;min-height:44px;padding:10px 18px;border:1px solid var(--d-ink);border-radius:3px;background:var(--d-ink);color:var(--paper,#fff);cursor:pointer}
+.account-pointer .account-open:focus-visible{outline:2px solid var(--d-mark);outline-offset:3px}
