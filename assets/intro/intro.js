@@ -31,7 +31,7 @@
     img.src = ASSETS + 'moon-nasa-lro.jpg'; img.alt = '';
     moon.append(img, mw);
     const white = el('div', 'intro-white');
-    const skip = el('p', 'intro-skip'); skip.textContent = EN ? 'Click anywhere to skip' : '点击任意处跳过';
+    const skip = el('p', 'intro-skip'); skip.textContent = EN ? (matchMedia('(hover: none)').matches ? 'Tap anywhere to skip' : 'Click anywhere to skip') : '点击任意处跳过'; // 触屏用 Tap
     sp.append(ink, moon, white, skip);
     document.body.append(sp);
 
