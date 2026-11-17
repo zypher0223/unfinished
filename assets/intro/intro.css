@@ -1,0 +1,9 @@
+/* 首页开场动画（assets/intro/intro.js） */
+.intro{position:fixed;inset:0;z-index:2147483647;background:#000;overflow:hidden;cursor:pointer;-webkit-tap-highlight-color:transparent}
+.intro-ink{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%)}
+.intro-moon{position:absolute;left:50%;top:50%;width:10px;height:10px;margin:-5px 0 0 -5px;border-radius:50%;overflow:hidden;opacity:0;box-shadow:0 0 6px 2px rgba(255,250,235,.6)}
+.intro-moon img{width:100%;height:100%;display:block}
+.intro-moon i{position:absolute;inset:0;background:#fff;opacity:0}
+.intro-white{position:absolute;inset:0;background:#fff;opacity:0;pointer-events:none}
+.intro-skip{position:absolute;bottom:28px;left:50%;transform:translateX(-50%);margin:0;font:13px/1.4 system-ui,-apple-system,sans-serif;color:#666;letter-spacing:.2em;white-space:nowrap;opacity:0}
+.d-credit a.intro-license{margin-left:.25em}
